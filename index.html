@@ -23,7 +23,8 @@
   --ease-pop: cubic-bezier(.34,1.56,.64,1);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; overflow-x: hidden; }
+html, body { margin: 0; overflow-x: hidden; overflow-x: clip; }
+header, main.wrap, .entry-inner, nav.bn { overflow-x: clip; }
 body {
   font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', sans-serif; font-weight: 500;
   color: var(--text); font-size: 14px; min-height: 100vh; padding-bottom: 96px;
@@ -451,8 +452,8 @@ footer button { background: none; color: var(--mute); font-size: 11px; }
    ※ 新着記事（.post）の見た目はそのまま
    ========================================================== */
 /* シャンデリア：天井の暖かい光とクリスタルのきらめき */
-.chandelier { position: absolute; left: 50%; top: -40px; width: 320px; height: 120px; transform: translateX(-50%); pointer-events: none; }
-.chandelier::before { content: ''; position: absolute; inset: -40px -60px; background: radial-gradient(closest-side at 50% 45%, rgba(255,226,160,.38), rgba(255,200,110,.1) 55%, transparent 100%); animation: glow 5s ease-in-out infinite; }
+.chandelier { position: absolute; left: 50%; top: -40px; width: min(320px, 100%); height: 120px; transform: translateX(-50%); pointer-events: none; }
+.chandelier::before { content: ''; position: absolute; inset: -40px 0; background: radial-gradient(closest-side at 50% 45%, rgba(255,226,160,.38), rgba(255,200,110,.1) 55%, transparent 100%); animation: glow 5s ease-in-out infinite; }
 .chandelier i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff, 0 0 12px rgba(255,220,150,.9); opacity: .2; animation: crystal 2.6s ease-in-out infinite; }
 @keyframes crystal { 0%,100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.2); } }
 @keyframes glow { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
