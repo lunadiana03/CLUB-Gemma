@@ -689,6 +689,7 @@ function load(opts) {
   return api('readAll', authBody()).then(d => {
     const first = !S.data;
     S.data = d;
+    applyLikeOverrides();
     store.set('hc_cache', d);
     if (S.session && !d.me) { S.session = null; store.del('hc_session'); }
     detectNew(first);
@@ -961,12 +962,46 @@ function postBlog() {
     .then(() => renderBlog(true))
     .catch(err => { loading(false); toast(err.message, true); });
 }
-function likePost(id, btn) {
-  btn.classList.add('pop');
-  if (!btn.classList.contains('on')) Sfx.play('heart');
-  api('likeBlog', Object.assign(authBody(), { id }))
-    .then(r => { if (r.liked) toast(`${mi('favorite')}<span>いいねしました</span>`); return load(); })
-    .catch(err => toast(err.message, true));
+// いいねは押した瞬間に画面と音だけ先に変えて、保存は裏で行う
+const likeWant = {}, likeBusy = {};
+function applyLikeOverrides() {
+  const me = S.data?.me; if (!me || me.role !== 'host') return;
+  (S.data.posts || []).forEach(p => {
+    if (!(p.id in likeWant)) return;
+    const has = p.likes.includes(me.id);
+    if (likeWant[p.id] && !has) p.likes = p.likes.concat([me.id]);
+    if (!likeWant[p.id] && has) p.likes = p.likes.filter(x => x !== me.id);
+    if (p.earns && !p.revoked) p.points = blogPts(S.data.settings, p.chars, p.likes.length);
+  });
+}
+function likePost(id) {
+  const me = S.data.me, p = (S.data.posts || []).find(x => x.id === id);
+  if (!p || !me) return;
+  const on = !p.likes.includes(me.id);
+  likeWant[id] = on;
+  applyLikeOverrides();
+  drawPosts();
+  const btn = document.querySelector(`[data-like="${id}"]`);
+  if (btn) btn.classList.add('pop');
+  if (on) Sfx.play('heart');
+  syncLike(id);
+}
+function syncLike(id) {
+  if (likeBusy[id]) return;   // 送信中なら、終わったあとに最新の状態で送り直す
+  likeBusy[id] = true;
+  const want = likeWant[id];
+  api('likeBlog', Object.assign(authBody(), { id, on: want }))
+    .then(() => {
+      likeBusy[id] = false;
+      if (likeWant[id] !== want) return syncLike(id);
+      delete likeWant[id];
+      load({ silent: true });
+    })
+    .catch(err => {
+      likeBusy[id] = false; delete likeWant[id];
+      toast('いいねを保存できませんでした：' + err.message, true);
+      load({ silent: true });
+    });
 }
 function revokePost(id, on) {
   if (on && !confirm('この記事のポイントを没収しますか？\nお客様の所持ポイントから、この記事でもらった分が引かれます。')) return;
@@ -1709,7 +1744,7 @@ document.addEventListener('click', e => {
   }
   if (t.hasAttribute('data-del-gift')) t.closest('.admin-gift').remove();
   if (t.dataset.delpost) deletePost(t.dataset.delpost);
-  if (t.dataset.like) likePost(t.dataset.like, t);
+  if (t.dataset.like) likePost(t.dataset.like);
   if (t.dataset.revoke) revokePost(t.dataset.revoke, t.dataset.on === '1');
   if (t.dataset.more) { const id = t.dataset.more; openPosts.has(id) ? openPosts.delete(id) : openPosts.add(id); drawPosts(); }
   if (t.dataset.deluser) {
@@ -1891,7 +1926,8 @@ const Demo = (function () {
         case 'likeBlog': {
           const u = meOf(Object.assign({}, b, { role: 'host' })); if (!u) return fail('ホストとしてログインしてください');
           const p = db.posts.find(x => x.id === b.id); if (!p) return fail('記事が見つかりません');
-          const on = !p.likes.includes(u.id);
+          const has = p.likes.includes(u.id), on = b.on === undefined ? !has : !!b.on;
+          if (on === has) return { liked: has };
           p.likes = on ? p.likes.concat([u.id]) : p.likes.filter(x => x !== u.id);
           if (p.earns && !p.revoked) { const pts = blogPts(db.settings, p.chars, p.likes.length); addPts(p.guestId, pts - p.points); p.points = pts; }
           save(); return { liked: on };
