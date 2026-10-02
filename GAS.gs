@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS = [
   ['blogCharPoint', 20, 'ブログ1文字あたりのポイント'],
   ['blogCharMax', 15000, '文字数でもらえるポイントの上限（1記事）'],
   ['blogLikePoint', 500, 'ホストのいいね1つでもらえるポイント'],
-  ['blogLikeMax', 30, '1記事にいいねできるのは何人まで'],
+  ['blogLikeMax', 30, 'いいねでポイントが増えるのは1記事何人分まで（いいね自体は何人でもできる）'],
   ['blogPostMax', 30000, '1記事でもらえるポイントの上限（文字数＋いいね）'],
   ['roomKey', '', '登録に必要な合言葉（空なら誰でも登録できる）'],
   ['adminPassword', 'changeme', '管理画面のパスワード（必ず変えてください）']
@@ -372,7 +372,6 @@ function likeBlog_(b) {
   const has = likes.indexOf(me.user.id) >= 0;
   const on = b.on === undefined ? !has : !!b.on;
   if (on === has) return { ok: true, liked: has };
-  if (on && likes.length >= (Number(s.blogLikeMax) || 0)) throw new Error('この記事のいいねは' + (Number(s.blogLikeMax) || 0) + '人までです');
   const next = on ? likes.concat([me.user.id]) : likes.filter(x => x !== me.user.id);
   setCell_('blog', p._row, 'likes', next.join(','));
   let delta = 0;

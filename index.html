@@ -873,7 +873,7 @@ function renderHost() {
 const openPosts = new Set();
 function blogRule() {
   const st = S.data.settings;
-  return `1日${fmt(st.blogDailyMax)}記事まで・1記事最大 <b class="pt">${fmt(st.blogPostMax)}</b>pt<br>文字数 1文字${fmt(st.blogCharPoint)}pt（最大${fmt(st.blogCharMax)}pt・${fmt(st.blogMinChars)}文字以上）＋ ホストのいいね 1つ${fmt(st.blogLikePoint)}pt（${fmt(st.blogLikeMax)}人まで）`;
+  return `1日${fmt(st.blogDailyMax)}記事まで・1記事最大 <b class="pt">${fmt(st.blogPostMax)}</b>pt<br>文字数 1文字${fmt(st.blogCharPoint)}pt（最大${fmt(st.blogCharMax)}pt・${fmt(st.blogMinChars)}文字以上）＋ ホストのいいね 1つ${fmt(st.blogLikePoint)}pt（${fmt(st.blogLikeMax)}人分まで）`;
 }
 function renderBlog(force) {
   const el = $('v-blog');
@@ -891,7 +891,7 @@ function renderBlog(force) {
       <p class="muted" style="margin:10px 0 0;text-align:center">${blogRule()}</p>
     </div>`;
   } else if (me?.role === 'host') {
-    top = `<div class="card blog-note">${mi('favorite')}<span>お客様のブログです。ホストは読んで「いいね」を付けられます。いいね1つでお客様に ${fmt(S.data.settings.blogLikePoint)}pt 入ります（1記事${fmt(S.data.settings.blogLikeMax)}人まで）。</span></div>`;
+    top = `<div class="card blog-note">${mi('favorite')}<span>お客様のブログです。ホストは読んで「いいね」を付けられます。いいね1つでお客様に ${fmt(S.data.settings.blogLikePoint)}pt 入ります（ポイントは1記事${fmt(S.data.settings.blogLikeMax)}人分まで。いいねは何人でもできます）。</span></div>`;
   } else {
     top = `<div class="card blog-note">${mi('edit_note')}<span>お客様としてログインすると、ブログを書いてポイントを貯められます。<br>${blogRule()}</span></div>
 `;
@@ -924,8 +924,8 @@ function drawPosts() {
       <div class="body${long && !open ? ' clamp' : ''}">${esc(p.body)}</div>
       ${long ? `<button class="more" data-more="${esc(p.id)}">${open ? 'たたむ' : '続きを読む'}</button>` : ''}
       <div class="pf">
-        ${myHost && (liked || p.likes.length < st.blogLikeMax) ? `<button class="like${liked ? ' on' : ''}" data-like="${esc(p.id)}">${mi('favorite')}${liked ? 'いいね済み' : 'いいね'}<b>${p.likes.length}/${st.blogLikeMax}</b></button>`
-          : `<span class="like ro${p.likes.length >= st.blogLikeMax ? ' on' : ''}">${mi('favorite')}<b>${p.likes.length}/${st.blogLikeMax}</b></span>`}
+        ${myHost ? `<button class="like${liked ? ' on' : ''}" data-like="${esc(p.id)}">${mi('favorite')}${liked ? 'いいね済み' : 'いいね'}<b>${p.likes.length}</b></button>`
+          : `<span class="like ro">${mi('favorite')}<b>${p.likes.length}</b></span>`}
         <span class="likers">${likers.slice(0, 6).map(h => avatar(h, { size: 24, noAura: true })).join('')}</span>
         <span class="sp"></span>${chip}
         ${(mine || S.adminData) && p.earns && !p.revoked ? `<span class="breakdown">文字 ${fmt(byChars)}pt ＋ いいね ${Math.min(p.likes.length, st.blogLikeMax)}×${fmt(st.blogLikePoint)}pt（上限 ${fmt(st.blogPostMax)}pt）</span>` : ''}
@@ -1598,7 +1598,7 @@ function renderAdmin() {
       <div class="field"><label>1文字あたりのポイント</label><input id="a-bcp" type="number" min="0" value="${esc(s.blogCharPoint)}"></div>
       <div class="field"><label>文字数でもらえるポイントの上限</label><input id="a-bcmax" type="number" min="0" value="${esc(s.blogCharMax)}"></div>
       <div class="field"><label>ホストのいいね1つのポイント</label><input id="a-blp" type="number" min="0" value="${esc(s.blogLikePoint)}"></div>
-      <div class="field"><label>1記事にいいねできるのは何人まで</label><input id="a-blmax" type="number" min="0" value="${esc(s.blogLikeMax)}"></div>
+      <div class="field"><label>いいねでポイントが増えるのは1記事何人分まで（いいね自体は何人でもできる）</label><input id="a-blmax" type="number" min="0" value="${esc(s.blogLikeMax)}"></div>
       <div class="field"><label>ポイント対象になる最低文字数</label><input id="a-bmin" type="number" min="0" value="${esc(s.blogMinChars)}"></div>
       <p class="muted" id="a-calc" style="margin:-2px 0 12px"></p>
       <div class="field"><label>毎日のボーナス（0でなし）</label><input id="a-bonus" type="number" min="0" value="${esc(s.dailyBonus)}"></div>
@@ -1728,7 +1728,7 @@ function adminCalc() {
   const reach = Math.min(v('a-bpmax'), v('a-bcmax') + v('a-blmax') * v('a-blp'));
   const perDay = v('a-bmax') * reach, top = topPrice();
   c.innerHTML = `満額の条件：${fmt(Math.ceil(v('a-bcmax') / Math.max(1, v('a-bcp'))))}文字 ＋ いいね${likesNeeded}人`
-    + (reach < v('a-bpmax') ? `<br><span style="color:var(--rose)">いいねが${fmt(v('a-blmax'))}人まででは上限に届きません（最大 ${fmt(reach)}pt）</span>` : '') + `<br>`;
+    + (reach < v('a-bpmax') ? `<br><span style="color:var(--rose)">いいねのポイントが${fmt(v('a-blmax'))}人分まででは上限に届きません（最大 ${fmt(reach)}pt）</span>` : '') + `<br>`;
   c.innerHTML += `1日の最大 ${fmt(perDay)}pt → 一番高い貢ぎ物（${fmt(top)}pt）まで最短 <b>${perDay ? Math.ceil(top / perDay) : '―'}日</b>`;
 }
 document.addEventListener('input', e => {
@@ -1891,7 +1891,6 @@ const Demo = (function () {
           const u = meOf(Object.assign({}, b, { role: 'host' })); if (!u) return fail('ホストとしてログインしてください');
           const p = db.posts.find(x => x.id === b.id); if (!p) return fail('記事が見つかりません');
           const on = !p.likes.includes(u.id);
-          if (on && p.likes.length >= db.settings.blogLikeMax) return fail(`この記事のいいねは${db.settings.blogLikeMax}人までです`);
           p.likes = on ? p.likes.concat([u.id]) : p.likes.filter(x => x !== u.id);
           if (p.earns && !p.revoked) { const pts = blogPts(db.settings, p.chars, p.likes.length); addPts(p.guestId, pts - p.points); p.points = pts; }
           save(); return { liked: on };
