@@ -811,12 +811,20 @@ function rankListHtml(list, opts) {
       <div class="bar" style="width:${Math.round(h.score / top * 100)}%"></div>
     </div>`).join('')}</div>`;
 }
+// ランキングの音は「今月」「累計」それぞれ、一度鳴ったら30分は鳴らさない
+const RANK_SND_COOLDOWN = 30 * 60 * 1000;
+function rankSound() {
+  const key = 'hc_rank_snd_' + S.period, last = store.get(key) || 0;
+  if (Date.now() - last < RANK_SND_COOLDOWN) return;
+  store.set(key, Date.now());
+  setTimeout(() => Sfx.play('rank'), 350);
+}
 function renderRank(animate) {
   const list = ranked();
   const body = $('rank-body');
   if (!list.length) { body.innerHTML = `<div class="empty" style="padding:50px 0">${mi('nightlife')} まだホストが登録されていません<br><span class="muted">マイページから「ホスト」として登録できます</span></div>`; return; }
   body.innerHTML = podiumHtml(list.slice(0, 3), animate) + (list.length > 3 ? rankListHtml(list.slice(3), { animate, meId: S.session?.role === 'host' ? S.session.id : null }) : '');
-  if (animate) { countUp(body); setTimeout(() => Sfx.play('rank'), 350); }
+  if (animate) { countUp(body); rankSound(); }
 }
 function feedHtml(list, opts) {
   opts = opts || {};
