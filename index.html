@@ -317,6 +317,13 @@ body.entry-open { overflow: hidden; }
 .entry-foot button { background: none; color: var(--mute); font-size: 11.5px; padding: 6px 10px; }
 .entry-burst { position: absolute; left: 50%; top: 40px; width: 10px; height: 10px; border-radius: 50%; transform: translateX(-50%); animation: burst 1.4s ease-out both .1s; pointer-events: none; }
 
+/* ---------- 効果音ボタン ---------- */
+.snd { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 12px; z-index: 95; width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(20,10,35,.6); box-shadow: inset 0 0 0 1px rgba(243,211,139,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .2s var(--ease-pop); }
+.snd:active { transform: scale(.92); }
+.snd.off { color: var(--mute); }
+.snd .mi { font-size: 20px; }
+
 /* ---------- 下のナビ ---------- */
 nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; gap: 4px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(15,8,25,0), rgba(15,8,25,.92) 35%); }
@@ -443,6 +450,7 @@ footer button { background: none; color: var(--mute); font-size: 11px; }
 </head>
 <body>
 <div class="bokeh" id="bokeh"></div>
+<button class="snd" id="snd" aria-label="効果音"><span class="mi">volume_up</span></button>
 
 <header>
   <h1 class="logo" id="club-name">CLUB Gemma</h1>
@@ -615,6 +623,7 @@ function detectLikes() {
   if (knownLikes && me?.role === 'guest') {
     (S.data.posts || []).filter(p => p.guestId === me.id && knownLikes[p.id]).forEach(p => {
       p.likes.filter(h => !knownLikes[p.id].includes(h)).forEach(h => {
+        Sfx.play('heart');
         toast(`${mi('favorite')}<span><b>${esc(hostById(h)?.name || '')}</b> があなたのブログにいいね${p.earns && !p.revoked ? `（+${fmt(S.data.settings.blogLikePoint)}pt）` : ''}</span>`);
       });
     });
@@ -721,7 +730,7 @@ function renderRank(animate) {
   const body = $('rank-body');
   if (!list.length) { body.innerHTML = `<div class="empty" style="padding:50px 0">${mi('nightlife')} まだホストが登録されていません<br><span class="muted">マイページから「ホスト」として登録できます</span></div>`; return; }
   body.innerHTML = podiumHtml(list.slice(0, 3), animate) + (list.length > 3 ? rankListHtml(list.slice(3), { animate, meId: S.session?.role === 'host' ? S.session.id : null }) : '');
-  if (animate) countUp(body);
+  if (animate) { countUp(body); setTimeout(() => Sfx.play('rank'), 350); }
 }
 function feedHtml(list, opts) {
   opts = opts || {};
@@ -859,7 +868,7 @@ function postBlog() {
     .then(r => {
       loading(false);
       $('b-title').value = ''; $('b-body').value = '';
-      if (r.earned > 0) playFx({ price: 0, icon: 'edit_note', giftName: `+${fmt(r.earned)}pt`, label: 'BLOG BONUS', line: 'ホストからいいねが付くと、さらにポイントが増えます' });
+      if (r.earned > 0) playFx({ price: 0, sound: 'coin', icon: 'edit_note', giftName: `+${fmt(r.earned)}pt`, label: 'BLOG BONUS', line: 'ホストからいいねが付くと、さらにポイントが増えます' });
       else toast(`${mi('check_circle')}<span>投稿しました（今回はポイントなし）</span>`);
       document.activeElement && document.activeElement.blur();
       return load();
@@ -869,6 +878,7 @@ function postBlog() {
 }
 function likePost(id, btn) {
   btn.classList.add('pop');
+  if (!btn.classList.contains('on')) Sfx.play('heart');
   api('likeBlog', Object.assign(authBody(), { id }))
     .then(r => { if (r.liked) toast(`${mi('favorite')}<span>いいねしました</span>`); return load(); })
     .catch(err => toast(err.message, true));
@@ -1008,6 +1018,86 @@ function doTribute() {
     .catch(err => { loading(false); toast(err.message, true); });
 }
 
+// ---------- 効果音（Web Audio で作る。音声ファイルなし） ----------
+const Sfx = (function () {
+  let ctx = null, master = null;
+  let on = store.get('hc_sound') !== false;
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return ctx; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = .45;
+    // やわらかく響かせる簡単なリバーブ
+    const len = ctx.sampleRate * 1.6, buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    const verb = ctx.createConvolver(); verb.buffer = buf;
+    const wet = ctx.createGain(); wet.gain.value = .22;
+    master.connect(ctx.destination); master.connect(verb); verb.connect(wet); wet.connect(ctx.destination);
+    return ctx;
+  }
+  // スマホは触ったあとでないと音が出ないので、最初のタップで準備する
+  ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (on) init(); }, { passive: true }));
+  function tone(f, t, dur, o) {
+    o = o || {};
+    const c = ctx, osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + dur);
+    const v = o.vol == null ? .3 : o.vol;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(v, t + (o.attack || .008));
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    osc.connect(g); g.connect(master); osc.start(t); osc.stop(t + dur + .05);
+  }
+  function bell(f, t, dur, vol) { tone(f, t, dur, { vol }); tone(f * 2.01, t, dur * .6, { vol: vol * .35 }); tone(f * 3.98, t, dur * .3, { vol: vol * .12 }); }
+  function noise(t, dur, freq, vol) {
+    const c = ctx, n = c.sampleRate * dur, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = .9;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(master); src.start(t);
+  }
+  const N = { C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77, C6: 1046.5, D6: 1174.66, E6: 1318.5, G6: 1567.98, C7: 2093 };
+  function sparkle(t, count, spread) {
+    const pool = [N.C6, N.E6, N.G6, N.C7, 2349.3, 2637];
+    for (let i = 0; i < count; i++) bell(pool[Math.floor(Math.random() * pool.length)], t + Math.random() * spread, .5, .05 + Math.random() * .04);
+  }
+  function pop(t) { noise(t, .09, 1600, .5); tone(220, t, .18, { to: 60, vol: .35 }); }
+  const S = {
+    tap(t) { tone(1400, t, .06, { vol: .06, type: 'triangle' }); },
+    heart(t) { tone(660, t, .16, { to: 990, vol: .18 }); bell(N.E6, t + .09, .5, .1); },
+    coin(t) { tone(N.B5, t, .09, { type: 'square', vol: .07 }); tone(N.E6, t + .08, .5, { type: 'square', vol: .07 }); sparkle(t + .1, 4, .4); },
+    welcome(t) { [N.G5, N.B5, N.D6, N.G6].forEach((f, i) => bell(f, t + i * .11, 1.2, .14)); sparkle(t + .45, 6, .8); },
+    enter(t) { [N.C6, N.G6].forEach((f, i) => bell(f, t + i * .07, .7, .1)); },
+    rank(t) { tone(130, t, .5, { to: 65, vol: .25 }); noise(t, .35, 900, .12); [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => bell(f, t + .15 + i * .06, 1, .07)); sparkle(t + .4, 8, .9); },
+    t1(t) { bell(N.E6, t, .7, .12); bell(N.G6, t + .12, .9, .1); },
+    t2(t) { [N.C6, N.E6, N.G6, N.C7].forEach((f, i) => bell(f, t + i * .09, 1, .1)); sparkle(t + .4, 6, .9); },
+    t3(t) { pop(t); [N.G5, N.C6, N.E6, N.G6].forEach((f, i) => bell(f, t + .15 + i * .1, 1.2, .12)); sparkle(t + .5, 12, 1.6); },
+    t4(t) {
+      pop(t);
+      const seq = [N.C5, N.E5, N.G5, N.C6]; seq.forEach((f, i) => { tone(f, t + .15 + i * .12, .3, { type: 'triangle', vol: .16 }); });
+      [N.C5, N.E5, N.G5, N.C6].forEach(f => tone(f, t + .65, 1.6, { type: 'triangle', vol: .09, attack: .05 }));
+      sparkle(t + .6, 18, 2.2);
+    },
+    t5(t) {
+      pop(t); pop(t + .5);
+      tone(98, t + .1, 1.2, { to: 49, vol: .3 });
+      const run = [N.G5, N.C6, N.D6, N.E6, N.G6, N.C7]; run.forEach((f, i) => tone(f, t + .2 + i * .08, .25, { type: 'triangle', vol: .13 }));
+      [N.C5, N.E5, N.G5, N.C6, N.E6].forEach(f => tone(f, t + .75, 2.6, { type: 'triangle', vol: .08, attack: .08 }));
+      [N.C5, N.E5, N.G5, N.C6].forEach(f => tone(f * 1.005, t + .75, 2.6, { type: 'sawtooth', vol: .015, attack: .1 }));
+      sparkle(t + .7, 34, 3.6);
+    }
+  };
+  return {
+    play(name) { if (!on || !S[name]) return; const c = init(); if (!c) return; try { S[name](c.currentTime + .02); } catch (e) {} },
+    get on() { return on; },
+    toggle() { on = !on; store.set('hc_sound', on); if (on) { init(); this.play('enter'); } return on; }
+  };
+})();
+function syncSnd() { const b = $('snd'); b.classList.toggle('off', !Sfx.on); b.innerHTML = mi(Sfx.on ? 'volume_up' : 'volume_off'); }
+syncSnd();
+$('snd').addEventListener('click', () => { Sfx.toggle(); syncSnd(); });
+
 // ---------- 貢ぎ演出 ----------
 const FX = {
   1: { dur: 2200, heart: 10, spark: 6 },
@@ -1087,6 +1177,7 @@ function playFx(t) {
       { transform: `translate(${x + rnd(-100, 100)}px, ${H * rnd(.6, 1.05)}px) rotate(${rnd(-360, 360)}deg)`, opacity: 0 }
     ], { duration: rnd(2600, 4000), delay: rnd(0, cfg.dur * .4), easing: 'ease-in-out' });
   }
+  Sfx.play(t.sound || 't' + tier);
   fxTimer = setTimeout(closeFx, cfg.dur);
 }
 function closeFx() {
@@ -1348,6 +1439,7 @@ function entryLogin() {
   loading(true);
   api('login', { role: E.role, name, password }).then(signedIn).then(() => {
     loading(false); hideEntry(); go('rank');
+    Sfx.play('enter');
     toast(`${mi('celebration')}<span>おかえりなさい、<b>${esc(name)}</b>${E.role === 'guest' ? ' 様' : ''}</span>`);
   }).catch(err => { loading(false); toast(err.message, true); });
 }
@@ -1356,7 +1448,7 @@ function entrySubmit() {
   (E.icon ? api('uploadIcon', { image: E.icon }).then(r => r.url) : Promise.resolve(''))
     .then(icon => api('register', { role: E.role, name: E.name, password: E.pass, icon, catch: E.catch, key: E.key }))
     .then(signedIn)
-    .then(() => { loading(false); entryGo('done'); })
+    .then(() => { loading(false); entryGo('done'); Sfx.play('welcome'); })
     .catch(err => { loading(false); toast(err.message, true); });
 }
 $('entry').addEventListener('click', e => {
@@ -1500,7 +1592,7 @@ document.addEventListener('click', e => {
     case 'profile-save': saveProfile(); break;
     case 'bonus':
       loading(true);
-      api('claimBonus', authBody()).then(r => { loading(false); playFx({ price: 0, icon: 'paid', giftName: `+${fmt(r.bonus)}pt`, label: 'DAILY BONUS', line: '今日のボーナスを受け取りました' }); return load(); })
+      api('claimBonus', authBody()).then(r => { loading(false); playFx({ price: 0, sound: 'coin', icon: 'paid', giftName: `+${fmt(r.bonus)}pt`, label: 'DAILY BONUS', line: '今日のボーナスを受け取りました' }); return load(); })
         .catch(err => { loading(false); toast(err.message, true); });
       break;
     case 'admin-link': go('admin'); break;
