@@ -398,7 +398,7 @@ function deleteBlog_(b) {
 // ---------- 管理 ----------
 function admin_(b) {
   const s = settings_();
-  if (String(b.adminPassword || '') !== String(s.adminPassword)) throw new Error('管理パスワードがちがいます');
+  if (String(b.adminPassword || '') !== String(s.adminPassword)) throw new Error('合鍵（管理パスワード）がちがいます');
   switch (b.op) {
     case 'check':
       return { ok: true, settings: Object.assign(publicSettings_(s), { roomKey: s.roomKey }),
