@@ -253,6 +253,70 @@ header { text-align: center; padding: 22px 16px 6px; position: relative; }
 .auth .icon-pick .av { --s: 72px; }
 .auth .icon-pick label.btn { font-size: 13px; padding: 9px 16px; }
 
+/* ---------- 入店画面（ログイン・新規登録） ---------- */
+body.entry-open { overflow: hidden; }
+.entry { position: fixed; inset: 0; z-index: 90; overflow-y: auto; display: none;
+  background: radial-gradient(120% 70% at 50% -10%, #3b1d5e 0%, var(--bg1) 45%, var(--bg0) 100%); }
+.entry.show { display: block; animation: viewIn .5s ease both; }
+.entry::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(45deg, transparent 0 27px, rgba(243,211,139,.07) 27px 28px), repeating-linear-gradient(-45deg, transparent 0 27px, rgba(243,211,139,.07) 27px 28px); }
+.entry-inner { position: relative; min-height: 100%; max-width: 440px; margin: 0 auto; padding: 32px 16px 40px; display: flex; flex-direction: column; justify-content: center; }
+.entry-logo { text-align: center; margin-bottom: 18px; }
+.entry-logo .logo { font-size: 30px; }
+.entry-dots { display: flex; justify-content: center; gap: 8px; min-height: 8px; margin-bottom: 14px; }
+.entry-dots span { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.15); transition: all .35s ease; }
+.entry-dots span.done { background: var(--gold2); }
+.entry-dots span.cur { background: var(--gold); width: 24px; }
+.entry-card { position: relative; text-align: center; padding: 28px 20px 24px; border-radius: 26px; background: linear-gradient(170deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border: 1px solid rgba(243,211,139,.35); box-shadow: 0 20px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); }
+.entry-card.in { animation: entryIn .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes entryIn { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.entry-kicker { font-family: 'Cinzel', serif; font-weight: 600; font-size: 11px; letter-spacing: .35em; color: var(--gold); }
+.entry-title { font-family: 'Shippori Mincho B1', serif; font-weight: 800; font-size: 23px; line-height: 1.45; margin: 8px 0 14px; }
+.entry-title.big { font-size: 30px; }
+.entry-text { color: var(--sub); line-height: 1.8; margin: 0 0 18px; font-size: 13.5px; }
+.entry-hint { font-size: 12px; color: var(--mute); margin: 10px 0 0; line-height: 1.6; }
+.entry-input { width: 100%; font-size: 18px; text-align: center; padding: 13px; border-radius: 16px; border: 1px solid rgba(243,211,139,.35); background: rgba(0,0,0,.3); color: var(--text); outline: none; transition: border-color .2s; }
+.entry-input:focus { border-color: var(--gold); }
+.entry-input + .entry-input { margin-top: 10px; }
+.entry-sub { display: block; margin: 16px auto 0; background: none; color: var(--sub); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+.entry-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.entry-role { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 8px 16px; border-radius: 20px; color: var(--text); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); transition: transform .25s var(--ease-pop), border-color .2s, background .2s, box-shadow .2s; }
+.entry-role:active { transform: scale(.97); }
+.entry-role .ic { width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.entry-role .ic .mi { font-size: 32px; color: #fff; }
+.entry-role.guest .ic { background: linear-gradient(150deg, #ffb0d4, var(--rose2)); box-shadow: 0 0 18px rgba(255,126,182,.45); }
+.entry-role.host .ic { background: linear-gradient(150deg, var(--gold3), var(--gold2)); box-shadow: 0 0 18px rgba(243,211,139,.45); }
+.entry-role.host .ic .mi { color: #2a1546; }
+.entry-role b { font-family: 'Shippori Mincho B1', serif; font-size: 17px; }
+.entry-role span { font-size: 11.5px; color: var(--sub); line-height: 1.5; }
+.entry-role.sel { transform: scale(1.03); }
+.entry-role.guest.sel { border-color: var(--rose); background: rgba(255,126,182,.12); }
+.entry-role.host.sel { border-color: var(--gold); background: rgba(243,211,139,.12); }
+.entry-nav { display: flex; gap: 8px; margin-top: 20px; }
+.entry-nav .btn { flex: 1; }
+.entry-nav .btn.ghost { flex: 0 0 auto; padding-left: 16px; padding-right: 18px; }
+.entry-icon { width: 128px; height: 128px; margin: 0 auto; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--sub); font-size: 12px; background: rgba(0,0,0,.25); border: 2px dashed rgba(243,211,139,.45); overflow: hidden; transition: transform .25s var(--ease-pop); }
+.entry-icon:active { transform: scale(.96); }
+.entry-icon .mi { font-size: 34px; color: var(--gold); }
+.entry-icon img { width: 100%; height: 100%; object-fit: cover; }
+.entry-icon.has { border: 0; box-shadow: 0 0 0 3px var(--gold), 0 0 24px rgba(243,211,139,.5); }
+.mcard { position: relative; overflow: hidden; text-align: left; border-radius: 20px; padding: 18px; margin-bottom: 18px;
+  background: linear-gradient(135deg, #3a1d5c, #1c0f30 60%, #2a1546); border: 1px solid rgba(243,211,139,.5); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.mcard::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.18) 50%, transparent 65%); background-size: 250% 100%; animation: sweep 3.2s ease-in-out infinite; pointer-events: none; }
+.mcard .mc-top { display: flex; justify-content: space-between; align-items: center; }
+.mcard .mc-club { font-family: 'Cinzel', serif; font-weight: 800; letter-spacing: .15em; font-size: 12px; color: var(--gold); }
+.mcard .mc-type { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .25em; padding: 3px 10px; border-radius: 999px; color: #2a1546; background: var(--gold); }
+.mcard.guest .mc-type { background: var(--rose); color: #fff; }
+.mcard .mc-body { display: flex; gap: 14px; align-items: center; margin-top: 14px; }
+.mcard .mc-body .av { --s: 72px; }
+.mcard .mc-row { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 3px 0; }
+.mcard .mc-row small { font-size: 10.5px; color: var(--sub); width: 52px; flex: none; }
+.mcard .mc-row b { font-family: 'Shippori Mincho B1', serif; font-size: 18px; }
+.mcard .mc-row button { margin-left: auto; background: none; color: var(--gold); font-size: 11.5px; padding: 2px 4px; }
+.entry-foot { display: flex; justify-content: center; margin-top: 16px; }
+.entry-foot button { background: none; color: var(--mute); font-size: 11.5px; padding: 6px 10px; }
+.entry-burst { position: absolute; left: 50%; top: 40px; width: 10px; height: 10px; border-radius: 50%; transform: translateX(-50%); animation: burst 1.4s ease-out both .1s; pointer-events: none; }
+
 /* ---------- 下のナビ ---------- */
 nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; gap: 4px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(15,8,25,0), rgba(15,8,25,.92) 35%); }
@@ -427,6 +491,16 @@ footer button { background: none; color: var(--mute); font-size: 11px; }
   <button data-v="me"><span class="ic"><span class="mi">person</span></span>マイページ</button>
 </nav>
 
+<div class="entry" id="entry">
+  <div class="entry-inner">
+    <div class="entry-logo"><div class="logo" id="entry-club">CLUB Gemma</div><div class="logo-sub">HOST CLUB</div></div>
+    <div class="entry-dots" id="entry-dots"></div>
+    <div class="entry-card" id="entry-card"></div>
+    <div class="entry-foot"><button id="entry-admin">管理</button></div>
+  </div>
+  <input type="file" accept="image/*" id="entry-icon-file" hidden>
+</div>
+
 <div class="sheet-bg" id="sheet-bg"></div>
 <div class="sheet" id="sheet"></div>
 <div class="fx" id="fx"></div>
@@ -527,6 +601,8 @@ function load(opts) {
     detectNew(first);
     detectLikes();
     renderAll(opts.animate || first);
+    // ログインしていない人には入店画面（ログイン・新規登録）を出す。管理画面に入っているときは出さない
+    if (!d.me && !S.adminData && !$('entry').classList.contains('show') && !/^(entry|done)$/.test(E.step)) showEntry();
     return d;
   }).catch(err => { if (!opts.silent) toast(err.message, true); });
 }
@@ -688,7 +764,7 @@ function renderHost() {
       </div>
       <div style="margin-top:18px">
         ${isGuest ? `<button class="btn rose block" data-tribute="${esc(h.id)}">${mi('redeem')}貢ぐ</button>`
-          : S.session ? '' : `<button class="btn ghost block" data-go="me">${mi('login')}お客様としてログインすると貢げます</button>`}
+          : ''}
       </div>
     </div>
     <div class="heading"><span class="en">PATRONS</span><span class="ja">太客ランキング</span></div>
@@ -725,7 +801,7 @@ function renderBlog(force) {
     top = `<div class="card blog-note">${mi('favorite')}<span>お客様のブログです。ホストは読んで「いいね」を付けられます。いいね1つでお客様に ${fmt(S.data.settings.blogLikePoint)}pt 入ります（1記事${fmt(S.data.settings.blogLikeMax)}人まで）。</span></div>`;
   } else {
     top = `<div class="card blog-note">${mi('edit_note')}<span>お客様としてログインすると、ブログを書いてポイントを貯められます。<br>${blogRule()}</span></div>
-      <button class="btn rose block" data-go="me" style="margin-top:10px">${mi('login')}ログイン・登録</button>`;
+`;
   }
   el.innerHTML = `<div class="heading"><span class="en">BLOG</span><span class="ja">お客様ブログ</span></div>${top}
     <div class="heading"><span class="en">LATEST</span><span class="ja">新着記事</span></div><div class="posts" id="posts"></div>`;
@@ -813,34 +889,12 @@ function deletePost(id) {
 }
 
 // ---------- マイページ ----------
-let authRole = 'guest', authMode = 'login', pendingIcon = null;
+let pendingIcon = null;
 function renderMe() {
   const el = $('v-me');
   const me = S.data?.me;
-  if (!me) { renderAuth(el); return; }
+  if (!me) { el.innerHTML = ''; showEntry(); return; }
   if (me.role === 'guest') renderGuestMe(el, me); else renderHostMe(el, me);
-}
-function renderAuth(el) {
-  const needsKey = S.data?.settings?.needsKey;
-  const reg = authMode === 'register';
-  el.innerHTML = `
-    <div class="heading"><span class="en">${reg ? 'ENTRY' : 'LOGIN'}</span><span class="ja">${reg ? '新規登録' : 'ログイン'}</span></div>
-    <div class="card auth">
-      <div class="seg" id="role-seg" style="margin-bottom:16px">
-        <button data-r="guest" class="${authRole === 'guest' ? 'on' : ''}">${mi('favorite')} お客様</button>
-        <button data-r="host" class="${authRole === 'host' ? 'on' : ''}">${mi('nightlife')} ホスト</button>
-      </div>
-      ${reg ? `<div class="icon-pick"><div id="icon-prev">${avatar({ name: '?', icon: pendingIcon }, { noAura: true, size: 72 })}</div>
-        <label class="btn ghost">${mi('add_photo_alternate')}アイコンを選ぶ<input type="file" accept="image/*" id="icon-file" hidden></label></div>` : ''}
-      <div class="field"><label>名前（なりきりの名前）</label><input id="f-name" maxlength="20" autocomplete="username"></div>
-      <div class="field"><label>パスワード（4文字以上）</label><input id="f-pass" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}"></div>
-      ${reg && authRole === 'host' ? `<div class="field"><label>キャッチコピー（任意・40文字まで）</label><input id="f-catch" maxlength="40" placeholder="例：今夜、君だけの王子様"></div>` : ''}
-      ${reg && needsKey ? `<div class="field"><label>合言葉</label><input id="f-key"></div>` : ''}
-      ${reg && authRole === 'guest' ? `<p class="muted" style="margin:0 0 12px">${mi('paid')} 登録すると ${fmt(S.data?.settings?.initialPoints)}pt もらえます。ブログを書くと${S.data ? blogRule() : ''}。</p>` : ''}
-      ${reg && authRole === 'host' ? `<p class="muted" style="margin:0 0 12px">${mi('info')} ホストは登録するだけでOK。お客様からの貢ぎ物でランキングが決まります（ブログは読むだけです）。</p>` : ''}
-      <button class="btn block" id="auth-go">${reg ? mi('how_to_reg') + '登録する' : mi('login') + 'ログイン'}</button>
-      <p style="text-align:center;margin:14px 0 0"><button class="btn ghost" id="auth-switch" style="font-size:12.5px;padding:8px 16px">${reg ? 'アカウントがある方はこちら' : 'はじめての方は新規登録'}</button></p>
-    </div>`;
 }
 function renderGuestMe(el, me) {
   const g = guestById(me.id) || { name: me.name };
@@ -1134,25 +1188,203 @@ function uploadPendingIcon() {
   return api('uploadIcon', { image: pendingIcon }).then(r => r.url);
 }
 
-// ---------- ログイン・登録 ----------
-function doAuth() {
-  const name = $('f-name').value.trim(), password = $('f-pass').value;
+// ---------- 入店画面（ログイン・新規登録） ----------
+// 登録の流れ：来店のしかた（お客様／ホスト）→ 名前 → パスワード → アイコン →（ホストはキャッチコピー）→（合言葉）→ 会員証の確認
+const E = { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false };
+function entrySteps() {
+  const st = ['role', 'name', 'pass', 'icon'];
+  if (E.role === 'host') st.push('catch');
+  if (S.data?.settings?.needsKey) st.push('key');
+  st.push('review');
+  return st;
+}
+function showEntry() {
+  if ($('entry').classList.contains('show')) return;
+  Object.assign(E, { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false });
+  document.body.classList.add('entry-open');
+  $('entry').classList.add('show');
+  renderEntry(true);
+}
+function hideEntry() { document.body.classList.remove('entry-open'); $('entry').classList.remove('show'); }
+function entryGo(step) { E.step = step; renderEntry(true); }
+function entryNext() {
+  if (E.back) { E.back = false; return entryGo('review'); }
+  const st = entrySteps(); entryGo(st[st.indexOf(E.step) + 1] || 'review');
+}
+function entryPrev() {
+  if (E.back) { E.back = false; return entryGo('review'); }
+  const st = entrySteps(), i = st.indexOf(E.step); entryGo(i > 0 ? st[i - 1] : 'welcome');
+}
+function entryNav(ok, label) {
+  return `<div class="entry-nav"><button class="btn ghost" data-e="prev">${mi('arrow_back')}もどる</button>
+    <button class="btn" data-e="next" ${ok ? '' : 'disabled'}>${E.back ? '確認にもどる' : (label || 'つぎへ')}${mi('arrow_forward')}</button></div>`;
+}
+function roleCards(sel) {
+  return `<div class="entry-roles">
+    <button class="entry-role guest${sel === 'guest' ? ' sel' : ''}" data-role="guest"><span class="ic">${mi('favorite')}</span><b>お客様</b><span>ブログでポイントを貯めて<br>推しのホストに貢ぐ</span></button>
+    <button class="entry-role host${sel === 'host' ? ' sel' : ''}" data-role="host"><span class="ic">${mi('nightlife')}</span><b>ホスト</b><span>登録するだけ。<br>ブログにいいねできる</span></button>
+  </div>`;
+}
+function renderEntry(animate) {
+  const card = $('entry-card'), dots = $('entry-dots');
+  const st = entrySteps(), idx = st.indexOf(E.step);
+  dots.innerHTML = idx >= 0 ? st.map((x, i) => `<span class="${i < idx ? 'done' : i === idx ? 'cur' : ''}"></span>`).join('') : '';
+  $('entry-club').textContent = S.data?.settings?.clubName || 'CLUB Gemma';
+  const club = esc(S.data?.settings?.clubName || 'CLUB Gemma');
+  const roleJa = E.role === 'host' ? 'ホスト' : 'お客様';
+  let h = '';
+  switch (E.step) {
+    case 'welcome':
+      h = `<div class="entry-kicker">WELCOME</div><div class="entry-title">${club} へ<br>ようこそ</div>
+        <p class="entry-text">はじめての方は、お客様かホストかを選んで<br>登録してください。</p>
+        <button class="btn block" data-e="start">${mi('how_to_reg')}新規登録</button>
+        <button class="btn ghost block" data-e="login" style="margin-top:10px">${mi('login')}ログイン</button>`;
+      break;
+    case 'login':
+      h = `<div class="entry-kicker">LOGIN</div><div class="entry-title">おかえりなさい</div>
+        ${roleCards(E.role)}
+        <div style="margin-top:14px"><input class="entry-input" id="e-login-name" maxlength="20" placeholder="名前" autocomplete="username" value="${esc(E.name)}">
+        <input class="entry-input" id="e-login-pass" type="password" placeholder="パスワード" autocomplete="current-password"></div>
+        <button class="btn block" data-e="dologin" style="margin-top:16px" ${E.role ? '' : 'disabled'}>${mi('login')}ログイン</button>
+        <p class="entry-hint">${E.role ? '' : 'お客様かホストかを選んでください'}</p>
+        <button class="entry-sub" data-e="welcome">もどる</button>`;
+      break;
+    case 'role':
+      h = `<div class="entry-kicker">STEP 1</div><div class="entry-title">どちらで登録しますか？</div>
+        ${roleCards(E.role)}<p class="entry-hint">${mi('info')} あとから変えられません</p>` + entryNav(!!E.role);
+      break;
+    case 'name':
+      h = `<div class="entry-kicker">STEP 2</div><div class="entry-title">${E.role === 'host' ? '源氏名は？' : 'お名前は？'}</div>
+        <input class="entry-input" id="e-name" maxlength="20" placeholder="名前" value="${esc(E.name)}">
+        <p class="entry-hint">なりきりで使う名前を入れてください</p>` + entryNav(!!E.name);
+      break;
+    case 'pass':
+      h = `<div class="entry-kicker">STEP 3</div><div class="entry-title">パスワードを決めよう</div>
+        <input class="entry-input" id="e-pass" type="password" placeholder="4文字以上" autocomplete="new-password" value="${esc(E.pass)}">
+        <p class="entry-hint">ほかの端末からログインするときに使います</p>` + entryNav(E.pass.length >= 4);
+      break;
+    case 'icon':
+      h = `<div class="entry-kicker">STEP 4</div><div class="entry-title">アイコンを決めよう</div>
+        <button class="entry-icon${E.icon ? ' has' : ''}" data-e="pickicon">${E.icon ? `<img src="${E.icon}" alt="">` : `${mi('add_a_photo')}<span>画像をえらぶ</span>`}</button>
+        <p class="entry-hint">${E.icon ? 'タップすると選び直せます' : '選んだあと、好きな部分を丸く切り取れます'}</p>` + entryNav(!!E.icon);
+      break;
+    case 'catch':
+      h = `<div class="entry-kicker">STEP 5</div><div class="entry-title">キャッチコピーは？</div>
+        <input class="entry-input" id="e-catch" maxlength="40" placeholder="例：今夜、君だけの王子様" value="${esc(E.catch)}">
+        <p class="entry-hint">ランキングで名前の下に出ます（なくてもOK・あとで変えられます）</p>` + entryNav(true);
+      break;
+    case 'key':
+      h = `<div class="entry-kicker">KEYWORD</div><div class="entry-title">合言葉は？</div>
+        <input class="entry-input" id="e-key" placeholder="合言葉" value="${esc(E.key)}">
+        <p class="entry-hint">部屋で聞いた合言葉を入れてください</p>` + entryNav(!!E.key);
+      break;
+    case 'review': {
+      const row = (label, val, step) => `<div class="mc-row"><small>${label}</small>${val}<button data-edit="${step}">変更</button></div>`;
+      h = `<div class="entry-kicker">CONFIRM</div><div class="entry-title">この内容で登録します</div>
+        <div class="mcard ${E.role}">
+          <div class="mc-top"><span class="mc-club">${club}</span><span class="mc-type">${E.role === 'host' ? 'CAST' : 'MEMBER'}</span></div>
+          <div class="mc-body">${avatar({ name: E.name, icon: E.icon }, { noAura: true })}
+            <div style="flex:1;min-width:0">${row('名前', `<b>${esc(E.name)}</b>`, 'name')}${row('種類', roleJa, 'role')}
+            ${E.role === 'host' ? row('キャッチ', `<span>${esc(E.catch) || '―'}</span>`, 'catch') : ''}${row('アイコン', '', 'icon')}</div>
+          </div>
+        </div>
+        <button class="btn block" data-e="submit">${mi('send')}登録する</button>
+        <button class="entry-sub" data-e="prev">もどる</button>`;
+      break;
+    }
+    case 'done':
+      h = `<div class="entry-burst"></div><div class="entry-kicker">WELCOME</div><div class="entry-title big">${E.role === 'host' ? '入店' : 'ご来店'}<br>ありがとう</div>
+        <div style="margin:4px auto 16px;width:fit-content">${avatar({ name: E.name, icon: E.icon }, { noAura: true, size: 96, rank: 1, score: 1 })}</div>
+        <p class="entry-text">${E.role === 'host'
+          ? `${esc(E.name)}、今日からよろしく。<br>お客様からの貢ぎ物でランキングが決まります。`
+          : `${esc(E.name)} 様、ようこそ。<br>ブログを書いてポイントを貯めて、<br>推しのホストに貢ぎましょう。`}</p>
+        <button class="btn block" data-e="enter">${mi('door_open')}お店に入る</button>`;
+      break;
+  }
+  card.innerHTML = h;
+  if (animate) { card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); }
+  const f = card.querySelector('input'); if (f && E.step !== 'login') setTimeout(() => f.focus(), 60);
+}
+function entryInput(e) {
+  const id = e.target.id, v = e.target.value;
+  const next = () => { const b = $('entry-card').querySelector('[data-e="next"]'); return b; };
+  if (id === 'e-name') { E.name = v.trim(); next().disabled = !E.name; }
+  if (id === 'e-pass') { E.pass = v; next().disabled = v.length < 4; }
+  if (id === 'e-catch') E.catch = v;
+  if (id === 'e-key') { E.key = v.trim(); next().disabled = !E.key; }
+  if (id === 'e-login-name') E.name = v.trim();
+}
+// 名前：すでにいる名前ならログインをすすめる
+function entryNameNext() {
+  const list = E.role === 'host' ? S.data?.hosts : S.data?.guests;
+  if ((list || []).some(u => u.name === E.name)) {
+    if (confirm(`「${E.name}」はもう登録されています。ログインしますか？`)) entryGo('login');
+    return;
+  }
+  entryNext();
+}
+function entryAction(a) {
+  switch (a) {
+    case 'start': E.role = E.role || ''; entryGo('role'); break;
+    case 'login': entryGo('login'); break;
+    case 'welcome': entryGo('welcome'); break;
+    case 'prev': entryPrev(); break;
+    case 'next': if (E.step === 'name') entryNameNext(); else entryNext(); break;
+    case 'pickicon': $('entry-icon-file').click(); break;
+    case 'dologin': entryLogin(); break;
+    case 'submit': entrySubmit(); break;
+    case 'enter': hideEntry(); go('rank'); break;
+  }
+}
+function signedIn(res) {
+  S.session = { role: E.role, token: res.token, id: res.id };
+  store.set('hc_session', S.session);
+  return load();
+}
+function entryLogin() {
+  const name = $('e-login-name').value.trim(), password = $('e-login-pass').value;
+  if (!E.role) return toast('お客様かホストかを選んでください', true);
   if (!name || !password) return toast('名前とパスワードを入れてください', true);
   loading(true);
-  const p = authMode === 'register'
-    ? uploadPendingIcon().then(icon => api('register', { role: authRole, name, password, icon: icon || '', catch: $('f-catch')?.value || '', key: $('f-key')?.value || '' }))
-    : api('login', { role: authRole, name, password });
-  p.then(res => {
-    S.session = { role: authRole, token: res.token, id: res.id };
-    store.set('hc_session', S.session);
-    pendingIcon = null;
-    return load();
-  }).then(() => {
-    loading(false);
-    toast(`${mi('celebration')}<span>${authMode === 'register' ? 'ようこそ' : 'おかえりなさい'}、<b>${esc(name)}</b>${authRole === 'guest' ? ' 様' : ''}</span>`);
-    renderMe();
+  api('login', { role: E.role, name, password }).then(signedIn).then(() => {
+    loading(false); hideEntry(); go('rank');
+    toast(`${mi('celebration')}<span>おかえりなさい、<b>${esc(name)}</b>${E.role === 'guest' ? ' 様' : ''}</span>`);
   }).catch(err => { loading(false); toast(err.message, true); });
 }
+function entrySubmit() {
+  loading(true);
+  (E.icon ? api('uploadIcon', { image: E.icon }).then(r => r.url) : Promise.resolve(''))
+    .then(icon => api('register', { role: E.role, name: E.name, password: E.pass, icon, catch: E.catch, key: E.key }))
+    .then(signedIn)
+    .then(() => { loading(false); entryGo('done'); })
+    .catch(err => { loading(false); toast(err.message, true); });
+}
+$('entry').addEventListener('click', e => {
+  const r = e.target.closest('[data-role]');
+  if (r) {
+    E.role = r.dataset.role;
+    if (E.step === 'login') renderEntry(false);
+    else { E.step === 'role' && E.back ? (E.back = false, entryGo('review')) : renderEntry(false); }
+    return;
+  }
+  const ed = e.target.closest('[data-edit]');
+  if (ed) { E.back = true; entryGo(ed.dataset.edit); return; }
+  const b = e.target.closest('[data-e]');
+  if (b) entryAction(b.dataset.e);
+  if (e.target.closest('#entry-admin')) { hideEntry(); go('admin'); }
+});
+$('entry').addEventListener('input', entryInput);
+$('entry').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'e-login-name' || e.target.id === 'e-login-pass') return entryLogin();
+  const b = $('entry-card').querySelector('[data-e="next"]');
+  if (b && !b.disabled) b.click();
+});
+$('entry-icon-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  cropSquare(f).then(b64 => { e.target.value = ''; if (b64) { E.icon = b64; renderEntry(false); } });
+});
+
 function saveProfile() {
   loading(true);
   uploadPendingIcon().then(icon => {
@@ -1264,9 +1496,7 @@ document.addEventListener('click', e => {
   switch (t.id) {
     case 't-go': doTribute(); break;
     case 'b-post': postBlog(); break;
-    case 'auth-go': doAuth(); break;
-    case 'auth-switch': authMode = authMode === 'login' ? 'register' : 'login'; renderMe(); break;
-    case 'logout': S.session = null; store.del('hc_session'); load().then(() => { renderMe(); toast(`${mi('waving_hand')}<span>ログアウトしました</span>`); }); break;
+    case 'logout': S.session = null; store.del('hc_session'); load().then(() => { go('rank'); showEntry(); toast(`${mi('waving_hand')}<span>ログアウトしました</span>`); }); break;
     case 'profile-save': saveProfile(); break;
     case 'bonus':
       loading(true);
@@ -1278,7 +1508,7 @@ document.addEventListener('click', e => {
       S.adminPass = $('a-pass').value;
       adminCall('check').then(r => { S.adminData = r; renderAdmin(); }).catch(() => {});
       break;
-    case 'a-exit': S.adminPass = null; S.adminData = null; go('rank'); break;
+    case 'a-exit': S.adminPass = null; S.adminData = null; go('rank'); if (!S.data?.me) showEntry(); break;
     case 'a-save-settings':
       adminCall('saveSettings', { settings: { clubName: $('a-club').value, initialPoints: $('a-init').value, dailyBonus: $('a-bonus').value, roomKey: $('a-key').value,
         blogDailyMax: $('a-bmax').value, blogPostMax: $('a-bpmax').value, blogCharPoint: $('a-bcp').value, blogCharMax: $('a-bcmax').value,
@@ -1311,10 +1541,6 @@ document.addEventListener('click', e => {
     if (pw) adminCall('resetPassword', { role, id, password: pw }).then(() => toast(`${mi('check_circle')}<span>パスワードを変えました</span>`)).catch(() => {});
   }
 });
-document.addEventListener('click', e => {
-  const r = e.target.closest('#role-seg button');
-  if (r) { authRole = r.dataset.r; renderMe(); }
-});
 $('sheet-bg').addEventListener('click', closeSheet);
 function adminCalc() {
   const v = id => Number($(id)?.value) || 0, c = $('a-calc'); if (!c) return;
@@ -1343,7 +1569,6 @@ document.addEventListener('change', e => {
   });
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.target.id === 'f-pass' || e.target.id === 'f-name')) doAuth();
   if (e.key === 'Enter' && e.target.id === 'a-pass') $('a-login').click();
   if (e.key === 'Escape') { closeSheet(); closeFx(); }
 });
@@ -1522,6 +1747,7 @@ if (DEMO) {
   $('demo-note').hidden = false;
   $('demo-note').innerHTML = `${mi('science')} デモ表示中です（GAS未接続・この端末の中だけで動きます）。お客様「ひめ」、ホスト「レイ」、パスワード 1234 でログインできます。管理パスワードは admin。`;
 }
+if (!S.session) showEntry();
 const cached = store.get('hc_cache');
 if (cached && !DEMO) { S.data = cached; renderAll(false); }
 load({ animate: true });
