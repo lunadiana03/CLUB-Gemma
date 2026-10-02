@@ -108,6 +108,43 @@ header { text-align: center; padding: 22px 16px 6px; position: relative; }
 .av.aura-5::before { inset: -7px; background: conic-gradient(from 0deg, #fff4d6, #f3d38b, #ff9ccf, #b9a4ff, #8ee8ff, #fff4d6, #f3d38b, #ff9ccf, #fff4d6); animation: spin 3s linear infinite; filter: blur(.5px); }
 .av.aura-5::after { inset: -20px; background: radial-gradient(circle, rgba(255,244,214,.6), rgba(255,156,207,.25) 45%, transparent 70%); animation: auraPulse 1.6s ease-in-out infinite; }
 .av .twinkle { position: absolute; z-index: 2; color: #fff; font-size: calc(var(--s) * .22); text-shadow: 0 0 6px var(--gold); animation: twinkle 2s ease-in-out infinite; pointer-events: none; }
+/* 累計で進化するフレーム（ホストだけ） */
+.av .fr { position: absolute; inset: calc(var(--s) * -.08); border-radius: 50%; pointer-events: none; z-index: 2; }
+.av .fw { position: absolute; z-index: 0; pointer-events: none; left: calc(var(--s) * -.62); right: calc(var(--s) * -.62); top: calc(var(--s) * -.05); bottom: calc(var(--s) * .05);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fffaf0'/%3E%3Cstop offset='.6' stop-color='%23f3d991'/%3E%3Cstop offset='1' stop-color='%23b8872c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg id='w' fill='url(%23g)' opacity='.95'%3E%3Cpath d='M70 38C56 12 30 6 4 12c16 4 28 10 36 18C24 26 12 28 2 34c18 2 32 4 42 8-14 2-26 8-34 16 22-4 42-8 60-14z'/%3E%3C/g%3E%3Cuse href='%23w' transform='translate(200 0) scale(-1 1)'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 0 6px rgba(255,236,190,.7)); animation: wing 3.2s ease-in-out infinite; }
+@keyframes wing { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.03); } }
+.av .fr::before, .av .fr::after { content: ''; position: absolute; pointer-events: none; }
+/* 1：GOLD 細い金の輪 */
+.av .fr-1 { box-shadow: 0 0 0 calc(var(--s) * .025) var(--gold), 0 0 calc(var(--s) * .12) rgba(233,201,119,.45); }
+/* 2：JEWEL 二重の金の輪 + 四方の宝石 */
+.av .fr-2 { border: calc(var(--s) * .035) double var(--gold); box-shadow: 0 0 calc(var(--s) * .14) rgba(233,201,119,.5); }
+.av .fr-2::before { inset: calc(var(--s) * -.07);
+  background: var(--orn) top center / calc(var(--s) * .16) no-repeat, var(--orn) bottom center / calc(var(--s) * .16) no-repeat,
+    var(--orn) left center / calc(var(--s) * .16) no-repeat, var(--orn) right center / calc(var(--s) * .16) no-repeat;
+  filter: drop-shadow(0 0 3px rgba(255,240,200,.9)); }
+/* 3：ROYAL 太い金属の輪 + 宝石 + 王冠 */
+.av .fr-3, .av .fr-4, .av .fr-5 { --rw: calc(var(--s) * .07);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--rw)), #000 calc(100% - var(--rw) + .5px)); mask: radial-gradient(farthest-side, transparent calc(100% - var(--rw)), #000 calc(100% - var(--rw) + .5px)); }
+.av .fr-3 { background: conic-gradient(from 20deg, #fff2c4, #c8962f, #fbe39c, #9b6c1c, #fff2c4, #c8962f, #fbe39c, #9b6c1c, #fff2c4); box-shadow: 0 0 calc(var(--s) * .16) rgba(233,201,119,.55); }
+/* マスクで王冠と宝石が消えないよう、飾りは別の要素（.fd）に描く */
+.av .fd { position: absolute; inset: calc(var(--s) * -.15); pointer-events: none; z-index: 3; }
+.av .fd::before { content: ''; position: absolute; left: 50%; top: calc(var(--s) * -.12); width: calc(var(--s) * .42); height: calc(var(--s) * .28); transform: translateX(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff6d6'/%3E%3Cstop offset='.5' stop-color='%23e9c977'/%3E%3Cstop offset='1' stop-color='%23a87a24'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M2 18L1 5l7 6 7-10 7 10 7-6-1 13z' fill='url(%23g)' stroke='%237a5512' stroke-width='.6'/%3E%3Ccircle cx='15' cy='12' r='2' fill='%23ff7eb6'/%3E%3Ccircle cx='7' cy='14' r='1.3' fill='%23b9e6ff'/%3E%3Ccircle cx='23' cy='14' r='1.3' fill='%23b9e6ff'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(233,201,119,.6)); }
+.av .fd::after { content: ''; position: absolute; inset: calc(var(--s) * .08);
+  background: var(--orn) top center / calc(var(--s) * .16) no-repeat, var(--orn) bottom center / calc(var(--s) * .16) no-repeat,
+    var(--orn) left center / calc(var(--s) * .16) no-repeat, var(--orn) right center / calc(var(--s) * .16) no-repeat;
+  filter: drop-shadow(0 0 3px rgba(255,240,200,.9)); }
+/* 4：PLATINUM 白金と金が回る輪 + 王冠 + 光の脈 */
+.av .fr-4 { background: conic-gradient(from 0deg, #ffffff, #d9dfe8, #f3d38b, #ffffff, #b9c2cf, #f3d38b, #ffffff); animation: spin 6s linear infinite; box-shadow: 0 0 calc(var(--s) * .2) rgba(230,236,255,.55); }
+/* 5：LEGEND 虹色クリスタルの輪 + 王冠 + 翼 */
+.av .fr-5 { background: conic-gradient(from 0deg, #fff4d6, #f3d38b, #ff9ccf, #c9b0ff, #8ee8ff, #fff4d6, #f3d38b, #ff9ccf, #fff4d6); animation: spin 4s linear infinite; }
+.av.lv5 .face { box-shadow: 0 0 0 2px #fff, 0 0 calc(var(--s) * .3) rgba(255,236,190,.8); }
+.frame-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 4px 12px; border-radius: 999px; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .2em; color: var(--gold3); background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(233,201,119,.5); }
+.frame-next { font-size: 11.5px; color: var(--sub); margin-top: 6px; }
+.frame-bar { height: 4px; border-radius: 9px; background: rgba(255,255,255,.08); margin: 6px auto 0; max-width: 220px; overflow: hidden; }
+.frame-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold2), var(--gold3)); border-radius: 9px; }
 @keyframes auraPulse { 0%,100% { opacity: .55; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes twinkle { 0%,100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
@@ -403,6 +440,12 @@ nav.bn button.on .ic { background: rgba(243,211,139,.16); transform: translateY(
 .fx.t5 .fx-card .gift { width: 160px; height: 160px; border-radius: 44px; }
 .fx.t5 .fx-card .gift .mi { font-size: 96px; }
 .fx-card .gn { font-family: 'Shippori Mincho B1', serif; font-weight: 800; font-size: 26px; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
+.fx-card .gn-sub { display: block; font-size: .62em; letter-spacing: .3em; margin-top: 4px; }
+.fx-card .gup { display: flex; align-items: center; gap: 12px; margin: 16px auto 0; width: fit-content; padding: 10px 18px 10px 12px; border-radius: 999px; text-align: left;
+  background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(233,201,119,.6), 0 0 24px rgba(233,201,119,.35); animation: rise .6s var(--ease-pop) both 1.1s; }
+.fx-card .gup small { display: block; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .3em; color: var(--gold); }
+.fx-card .gup b { display: block; font-family: 'Cinzel', serif; font-size: 18px; color: var(--gold3); letter-spacing: .1em; }
+.fx-card .gup span { display: block; font-size: 11.5px; color: var(--sub); }
 .fx.t5 .fx-card .gn { font-size: 29px; background: linear-gradient(100deg, var(--gold2), var(--gold3) 30%, var(--gold) 50%, var(--gold3) 70%, var(--gold2)); background-size: 250% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 3s linear infinite; text-shadow: none; filter: drop-shadow(0 2px 10px rgba(243,211,139,.4)); }
 .fx-card .gp { font-family: 'Cinzel', serif; font-weight: 800; color: var(--gold3); font-size: 18px; margin-top: 2px; }
 .fx-card .gf { margin-top: 12px; font-size: 14px; color: var(--text); }
@@ -740,6 +783,23 @@ function ranked(period) {
 }
 function rankOf(id, period) { return ranked(period).find(h => h.id === id); }
 
+// ホストのフレーム：もらった累計で進化する
+const FRAMES = [
+  { min: 100000,   label: 'GOLD',     ja: 'ゴールド' },
+  { min: 300000,   label: 'JEWEL',    ja: 'ジュエル' },
+  { min: 1000000,  label: 'ROYAL',    ja: 'ロイヤル' },
+  { min: 3000000,  label: 'PLATINUM', ja: 'プラチナ' },
+  { min: 10000000, label: 'LEGEND',   ja: 'レジェンド' }
+];
+function frameLevel(total) { let lv = 0; FRAMES.forEach((f, i) => { if ((total || 0) >= f.min) lv = i + 1; }); return lv; }
+function frameHtml(total) {
+  const lv = frameLevel(total);
+  const f = FRAMES[lv - 1], next = FRAMES[lv];
+  const prev = f ? f.min : 0;
+  return `<div class="frame-badge">${mi('workspace_premium')}FRAME ${f ? f.label : '―'}</div>`
+    + (next ? `<div class="frame-next">次の ${next.label} まで あと ${fmt(next.min - (total || 0))}pt</div><div class="frame-bar"><i style="width:${Math.min(100, ((total || 0) - prev) / (next.min - prev) * 100)}%"></i></div>`
+      : `<div class="frame-next">最高のフレームです</div>`);
+}
 // アイコン（画像がなければ名前の1文字目）
 function avatar(p, opts) {
   opts = opts || {};
@@ -750,7 +810,11 @@ function avatar(p, opts) {
   const style = opts.size ? ` style="--s:${opts.size}px"` : '';
   const face = p && p.icon ? `<img src="${esc(p.icon)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : esc(String(p?.name || '?').slice(0, 1));
   const tw = aura >= 4 && !opts.noAura ? `<span class="mi twinkle" style="right:-2%;top:2%">auto_awesome</span><span class="mi twinkle" style="left:-4%;bottom:10%;animation-delay:1s">auto_awesome</span>` : '';
-  return `<div class="${cls.join(' ')}"${style}><div class="face">${face}</div>${tw}</div>`;
+  // フレームはホストだけ（小さいアイコンには付けない）
+  const lv = p && p.total !== undefined && !(opts.size && opts.size < 36) ? frameLevel(p.total) : 0;
+  if (lv >= 5) cls.push('lv5');
+  const fr = lv ? `${lv >= 5 ? '<span class="fw"></span>' : ''}<span class="fr fr-${lv}"></span>${lv >= 3 ? '<span class="fd"></span>' : ''}` : '';
+  return `<div class="${cls.join(' ')}"${style}><div class="face">${face}</div>${fr}${tw}</div>`;
 }
 function giftIcon(icon, price, size) {
   const st = size ? ` style="width:${size}px;height:${size}px"` : '';
@@ -860,6 +924,7 @@ function renderHost() {
       ${avatar(h, { rank: rm.rank, score: rm.score })}
       <h2>${esc(h.name)}</h2>
       <div class="catch">${esc(h.catch || '')}</div>
+      ${frameHtml(h.total)}
       <div class="stats">
         <div class="stat"><div class="k">今月の順位</div><div class="v big pt">${rm.score > 0 ? 'No.' + rm.rank : '―'}</div></div>
         <div class="stat"><div class="k">今月</div><div class="v pt">${fmt(h.month)}<small>pt</small></div></div>
@@ -1063,7 +1128,7 @@ function renderHostMe(el, me) {
   const list = ranked(p);
   const above = list.filter(x => x.score > r.score).slice(-1)[0];
   el.innerHTML = `
-    <div class="me-head">${avatar(h, { rank: r.rank, score: r.score })}<div><span class="role">HOST</span><b>${esc(me.name)}</b></div></div>
+    <div class="me-head">${avatar(h, { rank: r.rank, score: r.score })}<div><span class="role">HOST</span><b>${esc(me.name)}</b>${frameHtml(h.total)}</div></div>
     <div class="seg" id="me-seg" style="margin-top:16px">
       <button data-p="month" class="${p === 'month' ? 'on' : ''}">今月</button>
       <button data-p="total" class="${p === 'total' ? 'on' : ''}">累計</button>
@@ -1134,13 +1199,15 @@ function closeSheet() { $('sheet-bg').classList.remove('show'); $('sheet').class
 function doTribute() {
   const g = (S.data.gifts || []).find(x => x.id === sheetState.giftId);
   if (!g) return;
+  const before = frameLevel(hostById(sheetState.hostId)?.total || 0);
   const msg = $('t-msg').value;
   loading(true);
   api('tribute', Object.assign(authBody(), { hostId: sheetState.hostId, giftId: g.id, count: sheetState.count, message: msg }))
     .then(res => {
       loading(false); closeSheet();
       S.seen && S.seen.add(res.tribute.id);
-      playFx(res.tribute);
+      const after = frameLevel((hostById(res.tribute.hostId)?.total || 0) + res.tribute.price);
+      playFx(Object.assign({}, res.tribute, after > before ? { levelUp: after } : {}));
       load();
     })
     .catch(err => { loading(false); toast(err.message, true); });
@@ -1249,10 +1316,11 @@ function playFx(t) {
     <div class="fx-card">
       <div class="lb">${esc(t.label || TIERS[tier].label)}</div>
       <div class="gift">${mi(esc(t.icon || 'redeem'))}</div>
-      <div class="gn">${esc(t.giftName)}${tier >= 4 ? ' 入りました' : ''}</div>
+      <div class="gn">${esc(t.giftName)}${tier >= 4 ? '<span class="gn-sub">入りました</span>' : ''}</div>
       ${t.price ? `<div class="gp">${fmt(t.price)} pt</div>` : ''}
       <div class="gf">${t.line ? esc(t.line) : `${esc(guestName(t.guestId))} 様より <b>${esc(host?.name || '')}</b> へ`}</div>
       ${t.message ? `<div class="gm">${mi('chat_bubble')} ${esc(t.message)}</div>` : ''}
+      ${t.levelUp ? `<div class="gup">${avatar(Object.assign({}, host, { total: FRAMES[t.levelUp - 1].min, auraPrice: 0 }), { size: 56, noAura: true })}<div><small>FRAME UP</small><b>${FRAMES[t.levelUp - 1].label}</b><span>${esc(host?.name || '')} のフレームが進化しました</span></div></div>` : ''}
       <div class="tap">タップで閉じる</div>
     </div>`;
   const parts = fx.querySelector('.parts');
