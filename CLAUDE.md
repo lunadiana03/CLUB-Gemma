@@ -1,6 +1,6 @@
 # CLUB Gemma（ホストパロ部屋のサイト）
 
-LINEオープンチャットのなりきり部屋で使う「ホストクラブパロ」のWebサイト。GitHub Pages で公開（`https://lunadiana03.github.io/club-gemma/`）。
+LINEオープンチャットのなりきり部屋で使う「ホストクラブパロ」のWebサイト。GitHub Pages で公開（`https://lunadiana03.github.io/CLUB-Gemma/`）。
 
 ## 構成
 - フロントは `index.html` 1ファイル（HTML/CSS/JS すべて）。
