@@ -684,9 +684,10 @@ footer button, .entry-foot button { display: inline-flex; align-items: center; g
   <!-- ランキング -->
   <section class="view active" id="v-rank">
     <div class="seg" id="rank-seg" style="margin-top:14px">
-      <button data-p="month" class="on">今月のランキング</button>
+      <button data-p="week" class="on">今週のランキング</button>
       <button data-p="total">累計ランキング</button>
     </div>
+    <p class="muted" style="text-align:center;margin:8px 0 0"><span class="mi">schedule</span> 週間ランキングは毎週月曜 0時にリセット</p>
     <div id="rank-body"><div class="skeleton"></div></div>
     <div class="heading"><span class="en">GIFTS</span><span class="ja">最新の貢ぎ物</span></div>
     <div class="feed" id="feed"></div>
@@ -797,7 +798,7 @@ const store = {
 const S = {
   data: null,
   session: store.get('hc_session'),   // { role, token, id }
-  period: 'month',
+  period: 'week',
   view: 'rank',
   hostId: null,
   seen: null,                          // 演出済みの貢ぎ物ID
@@ -971,7 +972,7 @@ function rankListHtml(list, opts) {
       <div class="bar" style="width:${Math.round(h.score / top * 100)}%"></div>
     </div>`).join('')}</div>`;
 }
-// ランキングの音は「今月」「累計」それぞれ、一度鳴ったら30分は鳴らさない
+// ランキングの音は「今週」「累計」それぞれ、一度鳴ったら30分は鳴らさない
 const RANK_SND_COOLDOWN = 30 * 60 * 1000;
 function rankSound() {
   const key = 'hc_rank_snd_' + S.period, last = store.get(key) || 0;
@@ -1001,7 +1002,7 @@ function feedHtml(list, opts) {
 function renderFeed() { $('feed').innerHTML = feedHtml((S.data.tributes || []).slice(0, 20)); }
 
 function renderHosts() {
-  const list = ranked('month');
+  const list = ranked('week');
   $('host-grid').innerHTML = list.length ? list.map(h => `
     <div class="hcard" data-host="${esc(h.id)}">${avatar(h, { rank: h.rank, score: h.score })}<b>${esc(h.name)}</b><span>${esc(h.catch || '')}</span></div>`).join('')
     : `<div class="empty" style="grid-column:1/-1">まだホストがいません</div>`;
@@ -1014,7 +1015,7 @@ function renderHost() {
   const h = hostById(S.hostId);
   const el = $('v-host');
   if (!h) { el.innerHTML = `<button class="back" data-go="rank">${mi('chevron_left')}戻る</button><div class="empty">ホストが見つかりません</div>`; return; }
-  const rm = rankOf(h.id, 'month'), rt = rankOf(h.id, 'total');
+  const rm = rankOf(h.id, 'week'), rt = rankOf(h.id, 'total');
   const isGuest = S.session?.role === 'guest';
   const history = (S.data.tributes || []).filter(t => t.hostId === h.id).slice(0, 15);
   el.innerHTML = `
@@ -1025,8 +1026,8 @@ function renderHost() {
       <div class="catch">${esc(h.catch || '')}</div>
       ${frameHtml(h.total)}
       <div class="stats">
-        <div class="stat"><div class="k">今月の順位</div><div class="v big pt">${rm.score > 0 ? 'No.' + rm.rank : '―'}</div></div>
-        <div class="stat"><div class="k">今月</div><div class="v pt">${fmt(h.month)}<small>pt</small></div></div>
+        <div class="stat"><div class="k">今週の順位</div><div class="v big pt">${rm.score > 0 ? 'No.' + rm.rank : '―'}</div></div>
+        <div class="stat"><div class="k">今週</div><div class="v pt">${fmt(h.week)}<small>pt</small></div></div>
         <div class="stat"><div class="k">累計（${rt.score > 0 ? 'No.' + rt.rank : '―'}）</div><div class="v pt">${fmt(h.total)}<small>pt</small></div></div>
       </div>
       <div style="margin-top:18px">
@@ -1225,7 +1226,7 @@ function renderGuestMe(el, me) {
     </div>
     <div class="heading"><span class="en">MY HOST</span><span class="ja">推しホスト</span></div>
     ${oshi.length ? `<div class="rank-list" style="margin-top:0">${oshi.map(x => `
-      <div class="rrow" data-host="${esc(x.h.id)}">${avatar(x.h, { size: 44 })}<div class="who"><b>${esc(x.h.name)}</b><span>今月 No.${rankOf(x.h.id, 'month').rank}</span></div>
+      <div class="rrow" data-host="${esc(x.h.id)}">${avatar(x.h, { size: 44 })}<div class="who"><b>${esc(x.h.name)}</b><span>今週 No.${rankOf(x.h.id, 'week').rank}</span></div>
       <div class="pt">${fmt(x.v)}<small>pt</small></div></div>`).join('')}</div>`
       : `<div class="card empty">まだ誰にも貢いでいません<br><button class="btn rose" data-go="hosts" style="margin-top:12px">${mi('groups')}ホストを選ぶ</button></div>`}
     <div class="heading"><span class="en">HISTORY</span><span class="ja">貢いだ記録</span></div>
@@ -1242,16 +1243,16 @@ function renderHostMe(el, me) {
   el.innerHTML = `
     <div class="me-head">${avatar(h, { rank: r.rank, score: r.score })}<div><span class="role">HOST</span><b>${esc(me.name)}</b>${frameHtml(h.total)}</div></div>
     <div class="seg" id="me-seg" style="margin-top:16px">
-      <button data-p="month" class="${p === 'month' ? 'on' : ''}">今月</button>
+      <button data-p="week" class="${p === 'week' ? 'on' : ''}">今週</button>
       <button data-p="total" class="${p === 'total' ? 'on' : ''}">累計</button>
     </div>
     <div class="card host-board" style="margin-top:10px">
       <div><div class="k">順位</div><div class="v rank pt">${r.score > 0 ? 'No.' + r.rank : '―'}</div></div>
-      <div><div class="k">${p === 'month' ? '今月' : '累計'}のポイント</div><div class="v pt"><span data-count="${r.score}">${fmt(r.score)}</span></div></div>
-      <div><div class="k">${p === 'month' ? '累計' : '今月'}</div><div class="v pt" style="font-size:18px;margin-top:8px">${fmt(p === 'month' ? h.total : h.month)}</div></div>
+      <div><div class="k">${p === 'week' ? '今週' : '累計'}のポイント</div><div class="v pt"><span data-count="${r.score}">${fmt(r.score)}</span></div></div>
+      <div><div class="k">${p === 'week' ? '累計' : '今週'}</div><div class="v pt" style="font-size:18px;margin-top:8px">${fmt(p === 'week' ? h.total : h.week)}</div></div>
       <div class="gap">${r.rank === 1 && r.score > 0 ? mi('crown') + ' 現在 No.1 です' : above ? `${mi('trending_up')} ${esc(above.name)}（No.${above.rank}）まであと <b class="pt">${fmt(above.score - r.score + 1)}</b>pt` : ''}</div>
     </div>
-    <div class="heading"><span class="en">RANKING</span><span class="ja">${p === 'month' ? '今月' : '累計'}のランキング</span></div>
+    <div class="heading"><span class="en">RANKING</span><span class="ja">${p === 'week' ? '今週' : '累計'}のランキング</span></div>
     ${rankListHtml(list, { meId: me.id })}
     <div class="heading"><span class="en">PATRONS</span><span class="ja">あなたの太客</span></div>
     <div class="card patrons">${Object.keys(me.byPartner || {}).length ? Object.keys(me.byPartner).map(id => ({ id, v: me.byPartner[id] })).sort((a, b) => b.v - a.v).slice(0, 5).map((x, i) => `
@@ -2195,14 +2196,15 @@ const Demo = (function () {
   let db = store.get(KEY);
   if (!db || !db.settings.blogLikeMax || !db.boys || !db.gifts[0].cat) db = seed();
   const save = () => store.set(KEY, db);
-  const month = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
+  // 週は月曜0時（日本時間）はじまり
+  const week = d => { const j = new Date(new Date(d).getTime() + 9 * hr); const dow = (j.getUTCDay() + 6) % 7; j.setUTCDate(j.getUTCDate() - dow); return j.toISOString().slice(0, 10); };
   const day = d => new Date(d).toDateString();
   const fail = m => Promise.reject(new Error(m));
   const roleList = r => r === 'host' ? db.hosts : r === 'boy' ? db.boys : db.guests;
   const meOf = b => b.token && roleList(b.role).find(u => u.token === b.token);
   const addPts = (gid, d) => { const g = db.guests.find(x => x.id === gid); if (g) g.points = Math.max(0, g.points + d); };
   function readAll(b) {
-    const m = month(Date.now()), dayAgo = Date.now() - 24 * hr;
+    const m = week(Date.now()), dayAgo = Date.now() - 24 * hr;
     const out = {
       settings: Object.assign({}, db.settings, { needsKey: !!db.settings.roomKey, roomKey: undefined, adminPassword: undefined }),
       posts: db.posts.slice(-100).reverse(),
@@ -2212,7 +2214,7 @@ const Demo = (function () {
         const pat = {}; mine.forEach(t => pat[t.guestId] = (pat[t.guestId] || 0) + t.price);
         return { id: h.id, name: h.name, icon: h.icon, catch: h.catch,
           total: mine.reduce((s, t) => s + t.price, 0),
-          month: mine.filter(t => month(t.at) === m).reduce((s, t) => s + t.price, 0),
+          week: mine.filter(t => week(t.at) === m).reduce((s, t) => s + t.price, 0),
           auraPrice: Math.max(0, ...mine.filter(t => new Date(t.at) >= dayAgo).map(t => t.price)),
           patrons: Object.keys(pat).map(id => ({ id, total: pat[id] })).sort((a, b) => b.total - a.total).slice(0, 3) };
       }),

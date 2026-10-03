@@ -153,7 +153,12 @@ function hash_(text) {
 }
 function newId_(prefix) { return prefix + Utilities.getUuid().replace(/-/g, '').slice(0, 10); }
 function nowIso_() { return new Date().toISOString(); }
-function monthOf_(iso) { return Utilities.formatDate(new Date(iso), TZ, 'yyyy-MM'); }
+// 週は月曜0時（日本時間）はじまり。その週の月曜の日付を返す
+function weekOf_(iso) {
+  const d = new Date(iso);
+  const dow = Number(Utilities.formatDate(d, TZ, 'u')); // 1=月 … 7=日
+  return Utilities.formatDate(new Date(d.getTime() - (dow - 1) * 86400000), TZ, 'yyyy-MM-dd');
+}
 function dayOf_(d) { return Utilities.formatDate(d, TZ, 'yyyy-MM-dd'); }
 function clean_(s, max) { return String(s == null ? '' : s).replace(/[\r\n\t]+/g, ' ').trim().slice(0, max); }
 function roleKey_(role) {
@@ -187,13 +192,13 @@ function readAll_(b) {
   const tributes = rows_('tributes');
   const gifts = rows_('gifts').map(g => ({ id: String(g.id), name: g.name, price: Number(g.price) || 0, icon: g.icon || 'redeem', cat: g.cat || 'OTHER' }))
     .sort((a, b) => a.price - b.price);
-  const month = monthOf_(nowIso_());
+  const week = weekOf_(nowIso_());
   const dayAgo = Date.now() - 24 * 3600 * 1000;
   const guestMap = {};
   guests.forEach(g => { guestMap[g.id] = g; });
 
   const stat = {};
-  hosts.forEach(h => { stat[h.id] = { total: 0, month: 0, auraPrice: 0, patrons: {} }; });
+  hosts.forEach(h => { stat[h.id] = { total: 0, week: 0, auraPrice: 0, patrons: {} }; });
   const guestGiven = {};
   tributes.forEach(t => {
     const price = Number(t.price) || 0;
@@ -201,7 +206,7 @@ function readAll_(b) {
     guestGiven[t.guestId] = (guestGiven[t.guestId] || 0) + price;
     if (!st) return;
     st.total += price;
-    if (monthOf_(t.at) === month) st.month += price;
+    if (weekOf_(t.at) === week) st.week += price;
     if (new Date(t.at).getTime() >= dayAgo) st.auraPrice = Math.max(st.auraPrice, price);
     st.patrons[t.guestId] = (st.patrons[t.guestId] || 0) + price;
   });
@@ -212,13 +217,13 @@ function readAll_(b) {
       id: p.id, at: p.at, guestId: p.guestId, title: p.title, body: p.body, points: Number(p.points) || 0,
       chars: Number(p.chars) || 0, earns: Number(p.earns) === 1, likes: likesOf_(p), revoked: Number(p.revoked) === 1
     })),
-    month: month,
+    week: week,
     gifts: gifts,
     hosts: hosts.map(h => {
       const st = stat[h.id];
       const patrons = Object.keys(st.patrons).map(id => ({ id: id, total: st.patrons[id] }))
         .sort((a, b) => b.total - a.total).slice(0, 3);
-      return { id: h.id, name: h.name, icon: h.icon, catch: h.catch, total: st.total, month: st.month, auraPrice: st.auraPrice, patrons: patrons };
+      return { id: h.id, name: h.name, icon: h.icon, catch: h.catch, total: st.total, week: st.week, auraPrice: st.auraPrice, patrons: patrons };
     }),
     guests: guests.map(g => ({ id: g.id, name: g.name, icon: g.icon, given: guestGiven[g.id] || 0 })),
     boys: rows_('boys').map(x => ({ id: x.id, name: x.name, icon: x.icon, catch: x.catch })),
