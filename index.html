@@ -398,6 +398,45 @@ body.entry-open { overflow: hidden; }
 .icon-grid button .mi { font-size: 24px; }
 .icon-grid button.on { background: rgba(233,201,119,.22); box-shadow: inset 0 0 0 2px var(--gold); }
 
+/* ---------- 貢ぐ画面：メニュー表 ---------- */
+.sheet { background: linear-gradient(rgba(6,5,4,.95), rgba(6,5,4,.97)), var(--marble) center / 900px no-repeat, #070605; }
+.sheet .qty button { background: rgba(0,0,0,.5); color: var(--gold3); box-shadow: inset 0 0 0 1px rgba(233,201,119,.45); }
+.sheet .qty b { color: var(--gold3); }
+.menu-card { position: relative; margin: 2px 0 6px; padding: 22px 18px 16px; border: 1px solid rgba(233,201,119,.55);
+  box-shadow: inset 0 0 0 4px rgba(6,5,4,.95), inset 0 0 0 5px rgba(233,201,119,.28);
+  background: var(--orn) top 8px left 8px / 11px no-repeat, var(--orn) top 8px right 8px / 11px no-repeat, var(--orn) bottom 8px left 8px / 11px no-repeat, var(--orn) bottom 8px right 8px / 11px no-repeat; }
+.menu-head { text-align: center; }
+.menu-head img { width: 150px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)) drop-shadow(0 0 12px rgba(233,201,119,.25)); }
+.menu-tag { font-family: 'Shippori Mincho B1', serif; font-size: 12px; letter-spacing: .18em; color: #d8c79f; margin-top: 6px; }
+.menu-orn { position: relative; height: 14px; margin: 10px auto 0; width: 70%; background: var(--orn) center / 12px no-repeat; }
+.menu-orn::before, .menu-orn::after { content: ''; position: absolute; top: 50%; width: calc(50% - 14px); height: 1px; }
+.menu-orn::before { left: 0; background: linear-gradient(90deg, transparent, rgba(233,201,119,.7)); }
+.menu-orn::after { right: 0; background: linear-gradient(90deg, rgba(233,201,119,.7), transparent); }
+.menu-to { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; padding: 8px 10px; border-top: 1px solid rgba(233,201,119,.15); border-bottom: 1px solid rgba(233,201,119,.15); font-family: 'Shippori Mincho B1', serif; font-size: 14px; }
+.menu-to b { color: var(--gold3); font-size: 16px; }
+.menu-bal { margin-left: auto; font-family: 'Zen Maru Gothic', sans-serif; font-size: 11.5px; color: var(--sub); }
+.menu-bal b { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold3); }
+.menu-bal small { font-family: 'Cinzel', serif; color: var(--gold); margin-left: 1px; }
+.menu-sec { margin-top: 18px; }
+.menu-sec .menu-cat { margin: 0 0 8px; font-family: 'Cinzel', serif; font-weight: 600; font-size: 16px; letter-spacing: .32em; color: #e3cfa0; }
+.menu-sec .menu-cat::after { background: linear-gradient(90deg, rgba(233,201,119,.6), transparent); }
+.menu-items { border-left: 1px solid rgba(233,201,119,.55); padding-left: 10px; margin-left: 3px; }
+.mrow { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 8px 8px; border-radius: 6px; background: none; color: var(--text); text-align: left;
+  font-family: 'Shippori Mincho B1', serif; font-weight: 700; font-size: 15px; letter-spacing: .06em; transition: background .25s, box-shadow .25s, transform .2s var(--ease-pop); }
+.mrow:active { transform: scale(.985); }
+.mrow .mic { width: 18px; font-size: 16px; color: var(--c); align-self: center; opacity: .85; }
+.mrow .mn { flex: none; max-width: 70%; line-height: 1.4; }
+.mrow .mn small { display: block; font-size: .68em; letter-spacing: .02em; color: var(--sub); margin-top: 1px; font-weight: 500; }
+.mrow .dots { flex: 1; min-width: 14px; border-bottom: 1px dotted rgba(233,201,119,.5); transform: translateY(-4px); }
+.mrow .mp { font-family: 'Cinzel', serif; font-weight: 600; font-size: 15px; color: #f1e2bd; white-space: nowrap; }
+.mrow .mp small { font-size: .78em; margin-left: 1px; color: #d8c79f; }
+.mrow.on { background: linear-gradient(90deg, rgba(233,201,119,.22), rgba(233,201,119,.04)); box-shadow: inset 2px 0 0 var(--gold), 0 0 18px rgba(233,201,119,.12); }
+.mrow.on .mn, .mrow.on .mp { color: var(--gold3); text-shadow: 0 0 10px rgba(233,201,119,.45); }
+.mrow.on .mic { opacity: 1; filter: drop-shadow(0 0 4px var(--c)); }
+.mrow.ng { opacity: .36; }
+.menu-foot { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .4em; color: var(--mute); }
+.menu-foot::before, .menu-foot::after { content: ''; width: 50px; height: 1px; background: rgba(233,201,119,.35); }
+
 /* ---------- 確認ダイアログ ---------- */
 .ask-bg { position: fixed; inset: 0; z-index: 350; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(3,2,1,.7); animation: viewIn .25s ease both; }
 .ask { width: 100%; max-width: 360px; text-align: center; padding: 24px 20px 20px; animation: entryIn .35s cubic-bezier(.22,1,.36,1) both; }
@@ -1290,13 +1329,21 @@ function drawSheet() {
   const msg = $('t-msg')?.value || '';
   $('sheet').innerHTML = `
     <div class="grab"></div>
-    <h3>${avatar(h, { size: 36 })}${esc(h.name)} に貢ぐ</h3>
-    <div class="bal">所持 <b>${fmt(pts)}pt</b></div>
-    ${giftGroups(gifts).map(([cat, list]) => `<div class="menu-cat">${esc(cat)}</div><div class="gift-grid">${list.map(x => {
-      const t = tierOf(x.price);
-      return `<button class="gcard t${t}${x.id === sheetState.giftId ? ' on' : ''}${x.price > pts ? ' ng' : ''}" data-gift="${esc(x.id)}">
-        ${giftIcon(x.icon, x.price)}<div class="tl">${TIERS[t].label}</div><div class="n">${esc(x.name)}</div><div class="p">${fmt(x.price)}pt</div></button>`;
-    }).join('')}</div>`).join('')}
+    <div class="menu-card">
+      <div class="menu-head">
+        <img src="logo.png" alt="CLUB Gemma">
+        <div class="menu-tag">〜 輝く宝石たちとの特別な夜を 〜</div>
+        <div class="menu-orn"></div>
+      </div>
+      <div class="menu-to">${avatar(h, { size: 36, noAura: true })}<span><b>${esc(h.name)}</b> へ</span><span class="menu-bal">所持 <b>${fmt(pts)}</b><small>pt</small></span></div>
+      ${giftGroups(gifts).map(([cat, list]) => `<section class="menu-sec"><div class="menu-cat">${esc(cat)}</div><div class="menu-items">${list.map(x => {
+        const t = tierOf(x.price), m = String(x.name).match(/^(.*?)([（(].*[）)])$/);
+        const nm = m ? `${esc(m[1])}<small>${esc(m[2])}</small>` : esc(x.name);
+        return `<button class="mrow t${t}${x.id === sheetState.giftId ? ' on' : ''}${x.price > pts ? ' ng' : ''}" data-gift="${esc(x.id)}">
+          ${mi(esc(x.icon || 'redeem'), 'mic')}<span class="mn">${nm}</span><span class="dots"></span><span class="mp">${fmt(x.price)}<small>pt</small></span></button>`;
+      }).join('')}</div></section>`).join('')}
+      <div class="menu-foot">CLUB GEMMA</div>
+    </div>
     <div class="qty"><button data-q="-1">${mi('remove')}</button><b>×${sheetState.count}</b><button data-q="1">${mi('add')}</button></div>
     <div class="field"><input id="t-msg" maxlength="60" placeholder="ひとことメッセージ（任意）" value="${esc(msg)}"></div>
     <button class="btn rose block" id="t-go" ${!g || total > pts ? 'disabled' : ''}>${mi('redeem')}${g ? `${fmt(total)}pt で貢ぐ` : '選んでください'}</button>
