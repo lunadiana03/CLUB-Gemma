@@ -525,6 +525,7 @@ nav.bn button.on .ic { background: rgba(243,211,139,.16); transform: translateY(
 .fx.t5 .fx-card .gift { width: 160px; height: 160px; border-radius: 44px; }
 .fx.t5 .fx-card .gift .mi { font-size: 96px; }
 .fx-card .gn { font-family: 'Shippori Mincho B1', serif; font-weight: 800; font-size: 26px; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
+.fx-card .gq { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 4px 12px; border-radius: 999px; font-size: 11.5px; color: var(--gold3); background: rgba(0,0,0,.5); box-shadow: inset 0 0 0 1px rgba(233,201,119,.45); }
 .fx-card .gn-sub { display: block; font-size: .62em; letter-spacing: .3em; margin-top: 4px; }
 .fx-card .gup { display: flex; align-items: center; gap: 12px; margin: 16px auto 0; width: fit-content; padding: 10px 18px 10px 12px; border-radius: 999px; text-align: left;
   background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(233,201,119,.6), 0 0 24px rgba(233,201,119,.35); animation: rise .6s var(--ease-pop) both 1.1s; }
@@ -830,6 +831,8 @@ function load(opts) {
     if (S.session && !d.me) { S.session = null; store.del('hc_session'); }
     detectNew(first);
     detectLikes();
+    markHostSeen();
+    hostWelcome();
     renderAll(opts.animate || first);
     // ログインしていない人には入店画面（ログイン・新規登録）を出す。管理画面に入っているときは出さない
     if (!d.me && !S.adminData && !$('entry').classList.contains('show') && !/^(entry|done)$/.test(E.step)) showEntry();
@@ -1468,6 +1471,7 @@ function playFx(t) {
     <div class="ring"></div>${tier >= 3 ? '<div class="ring r2"></div>' : ''}${tier >= 5 ? '<div class="ring r3"></div>' : ''}
     <div class="parts"></div>
     <div class="fx-card">
+      ${t.queue ? `<div class="gq">${mi('mark_email_unread')}${esc(t.queue)}</div>` : ''}
       <div class="lb">${esc(t.label || TIERS[tier].label)}</div>
       <div class="gift">${mi(esc(t.icon || 'redeem'))}</div>
       <div class="gn">${esc(t.giftName)}${tier >= 4 ? '<span class="gn-sub">入りました</span>' : ''}</div>
@@ -1475,7 +1479,8 @@ function playFx(t) {
       <div class="gf">${t.line ? esc(t.line) : `${esc(guestName(t.guestId))} 様より <b>${esc(host?.name || '')}</b> へ`}</div>
       ${t.message ? `<div class="gm">${mi('chat_bubble')} ${esc(t.message)}</div>` : ''}
       ${t.levelUp ? `<div class="gup">${avatar(Object.assign({}, host, { total: FRAMES[t.levelUp - 1].min, auraPrice: 0 }), { size: 56, noAura: true })}<div><small>FRAME UP</small><b>${FRAMES[t.levelUp - 1].label}</b><span>${esc(host?.name || '')} のフレームが進化しました</span></div></div>` : ''}
-      <div class="tap">タップで閉じる</div>
+      ${t.queueTotal ? `<div class="gm" style="color:var(--gold3)">留守のあいだに 合計 <b>${fmt(t.queueTotal)}</b>pt 届いていました</div>` : ''}
+      <div class="tap">${fxQueue.length ? `タップで次へ（あと${fxQueue.length}件）` : 'タップで閉じる'}</div>
     </div>`;
   const parts = fx.querySelector('.parts');
   const W = innerWidth, H = innerHeight, cx = W / 2, cy = H * .45;
@@ -1535,7 +1540,33 @@ function closeFx() {
   if (!fx.classList.contains('show')) return;
   clearTimeout(fxTimer);
   fx.classList.add('out');
-  setTimeout(() => { fx.className = 'fx'; fx.innerHTML = ''; }, 480);
+  setTimeout(() => {
+    fx.className = 'fx'; fx.innerHTML = '';
+    // 順番待ちの演出があれば続けて流す
+    if (fxQueue.length) setTimeout(() => playFx(fxQueue.shift()), 350);
+  }, 480);
+}
+
+// ---------- ホストがログインしたとき：留守のあいだに届いた貢ぎ物を、ptの低いものから1つずつ ----------
+const fxQueue = [];
+let hostWelcomeDone = false;
+function hostWelcome() {
+  const me = S.data?.me;
+  if (!me || me.role !== 'host' || hostWelcomeDone || $('entry').classList.contains('show')) return;
+  hostWelcomeDone = true;
+  const key = 'hc_seen_' + me.id, last = Number(store.get(key)) || 0;
+  const list = (me.history || []).filter(t => new Date(t.at).getTime() > last)
+    .sort((a, b) => (a.price - b.price) || (new Date(a.at) - new Date(b.at)));
+  store.set(key, Date.now());
+  if (!list.length) return;
+  const total = list.reduce((sum, t) => sum + t.price, 0);
+  list.forEach((t, i) => fxQueue.push(Object.assign({}, t, { queue: `留守のあいだに届いた貢ぎ物 ${i + 1} / ${list.length}`, queueTotal: i === list.length - 1 ? total : 0 })));
+  setTimeout(() => { if (!$('fx').classList.contains('show') && fxQueue.length) playFx(fxQueue.shift()); }, 700);
+}
+// ページを開いているあいだに届いた分は、見たことにしておく
+function markHostSeen() {
+  const me = S.data?.me;
+  if (me && me.role === 'host' && hostWelcomeDone && !document.hidden && !fxQueue.length) store.set('hc_seen_' + me.id, Date.now());
 }
 
 // ---------- トースト ----------
@@ -1646,7 +1677,7 @@ function showEntry() {
   $('entry').classList.add('show');
   renderEntry(true);
 }
-function hideEntry() { document.body.classList.remove('entry-open'); $('entry').classList.remove('show'); }
+function hideEntry() { document.body.classList.remove('entry-open'); $('entry').classList.remove('show'); setTimeout(hostWelcome, 300); }
 function entryGo(step) { E.step = step; renderEntry(true); }
 function entryNext() {
   if (E.back) { E.back = false; return entryGo('review'); }
@@ -1786,6 +1817,7 @@ function entryAction(a) {
   }
 }
 function signedIn(res) {
+  hostWelcomeDone = false;
   S.session = { role: E.role, token: res.token, id: res.id };
   store.set('hc_session', S.session);
   return load();
