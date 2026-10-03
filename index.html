@@ -1293,7 +1293,7 @@ function openTribute(hostId) {
   $('sheet-bg').classList.add('show'); $('sheet').classList.add('show');
 }
 // メニューのカテゴリ（メニュー表の順）。ほかの名前はいちばん後ろ
-const GIFT_CATS = ['CAST DRINK', 'TEQUILA', 'CHAMPAGNE', 'SPECIAL', 'FOOD', 'OTHER'];
+const GIFT_CATS = ['CAST DRINK', 'TEQUILA', 'CHAMPAGNE', 'SPECIAL', 'FOOD', 'OPTION', 'OTHER'];
 function giftGroups(gifts) {
   const map = {};
   gifts.forEach(g => { const c = g.cat || 'OTHER'; (map[c] = map[c] || []).push(g); });
