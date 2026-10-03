@@ -9,6 +9,7 @@
 const TZ = 'Asia/Tokyo';
 const SHEETS = {
   hosts:    { name: 'ホスト',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
+  boys:     { name: 'ボーイ',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
   guests:   { name: 'お客様',   cols: ['id', 'name', 'icon', 'points', 'passHash', 'token', 'createdAt', 'lastBonus', 'blogDay', 'blogCount'] },
   gifts:    { name: '貢ぎ物',   cols: ['id', 'name', 'price', 'icon'] },
   tributes: { name: '貢ぎ履歴', cols: ['id', 'at', 'guestId', 'hostId', 'giftId', 'giftName', 'price', 'icon', 'message'] },
@@ -153,8 +154,14 @@ function clean_(s, max) { return String(s == null ? '' : s).replace(/[\r\n\t]+/g
 function roleKey_(role) {
   if (role === 'host') return 'hosts';
   if (role === 'guest') return 'guests';
+  if (role === 'boy') return 'boys';
   throw new Error('ホストかお客様を選んでください');
 }
+// ボーイ（スタッフ）になるには合鍵（管理パスワード）が必要
+function checkStaffKey_(s, key) {
+  if (String(key || '') !== String(s.adminPassword)) throw new Error('合鍵（管理パスワード）がちがいます');
+}
+const ROLE_OF_KEY = { hosts: 'host', guests: 'guest', boys: 'boy' };
 function me_(b) {
   if (!b.token) return null;
   const key = roleKey_(b.role);
@@ -209,6 +216,7 @@ function readAll_(b) {
       return { id: h.id, name: h.name, icon: h.icon, catch: h.catch, total: st.total, month: st.month, auraPrice: st.auraPrice, patrons: patrons };
     }),
     guests: guests.map(g => ({ id: g.id, name: g.name, icon: g.icon, given: guestGiven[g.id] || 0 })),
+    boys: rows_('boys').map(x => ({ id: x.id, name: x.name, icon: x.icon, catch: x.catch })),
     tributes: tributes.slice(-60).reverse().map(t => ({
       id: t.id, at: t.at, guestId: t.guestId, hostId: t.hostId, giftName: t.giftName, price: Number(t.price) || 0, icon: t.icon, message: t.message
     }))
@@ -241,17 +249,18 @@ function register_(b) {
   const s = settings_();
   const key = roleKey_(b.role);
   const roomKey = String(s.roomKey || '').trim();
-  if (roomKey && clean_(b.key, 100) !== roomKey) throw new Error('合言葉がちがいます');
+  if (key === 'boys') checkStaffKey_(s, b.staffKey);
+  else if (roomKey && clean_(b.key, 100) !== roomKey) throw new Error('合言葉がちがいます');
   const name = clean_(b.name, 20);
   const pass = String(b.password || '');
   if (!name) throw new Error('名前を入れてください');
   if (pass.length < 4) throw new Error('パスワードは4文字以上にしてください');
   if (rows_(key).some(r => String(r.name) === name)) throw new Error('その名前はもう登録されています');
-  const id = newId_(key === 'hosts' ? 'h' : 'c');
+  const id = newId_({ hosts: 'h', guests: 'c', boys: 'b' }[key]);
   const token = Utilities.getUuid();
   const obj = { id: id, name: name, icon: clean_(b.icon, 500), passHash: hash_(pass), token: token, createdAt: nowIso_() };
-  if (key === 'hosts') obj.catch = clean_(b.catch, 40);
-  else { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; }
+  if (key === 'guests') { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; }
+  else obj.catch = clean_(b.catch, 40);
   append_(key, obj);
   return { ok: true, id: id, token: token };
 }
@@ -284,7 +293,7 @@ function updateProfile_(b) {
     setCell_(me.key, me.user._row, 'name', name);
   }
   if (b.icon !== undefined) setCell_(me.key, me.user._row, 'icon', clean_(b.icon, 500));
-  if (b.catch !== undefined && me.key === 'hosts') setCell_(me.key, me.user._row, 'catch', clean_(b.catch, 40));
+  if (b.catch !== undefined && me.key !== 'guests') setCell_(me.key, me.user._row, 'catch', clean_(b.catch, 40));
   if (b.password) {
     if (String(b.password).length < 4) throw new Error('パスワードは4文字以上にしてください');
     setCell_(me.key, me.user._row, 'passHash', hash_(String(b.password)));
@@ -292,28 +301,30 @@ function updateProfile_(b) {
   return { ok: true };
 }
 
-// 陣営（お客様⇔ホスト）を変える。ポイント・履歴などはすべてリセット（名前・アイコン・パスワードは引き継ぐ）
+// 陣営（お客様・ホスト・ボーイ）を変える。ポイント・貢ぎ物の記録・ブログなどはすべてリセット（名前・アイコン・パスワードは引き継ぐ）
 function switchRole_(b) {
   const me = me_(b);
   if (!me) throw new Error('ログインし直してください');
   if (b.confirm !== 'switch') throw new Error('確認が取れませんでした');
   const s = settings_();
-  const toKey = me.key === 'hosts' ? 'guests' : 'hosts';
+  const toKey = roleKey_(b.to);
+  if (toKey === me.key) throw new Error('今と同じ陣営です');
+  if (toKey === 'boys') checkStaffKey_(s, b.staffKey);
   const name = String(me.user.name);
   if (rows_(toKey).some(r => String(r.name) === name)) throw new Error('移る先に同じ名前の人がいます。先に名前を変えてください');
-  const id = newId_(toKey === 'hosts' ? 'h' : 'c');
+  const id = newId_({ hosts: 'h', guests: 'c', boys: 'b' }[toKey]);
   const token = Utilities.getUuid();
   const obj = { id: id, name: name, icon: me.user.icon, passHash: me.user.passHash, token: token, createdAt: nowIso_() };
-  if (toKey === 'hosts') obj.catch = '';
-  else { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; obj.blogDay = ''; obj.blogCount = 0; }
-  // お客様だった人のブログは消す（貢いだ記録はホストの売上なので残す）
-  if (me.key === 'guests') {
-    const posts = rows_('blog').filter(p => p.guestId === me.user.id).map(p => p._row).sort((a, c) => c - a);
-    posts.forEach(r => sheet_('blog').deleteRow(r));
-  }
+  if (toKey === 'guests') { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; obj.blogDay = ''; obj.blogCount = 0; }
+  else obj.catch = '';
+  const oldId = me.user.id;
+  // 貢ぎ物の記録（貢いだ分・もらった分）とブログを消す。下の行から消すと行番号がずれない
+  const delRows = (key, test) => rows_(key).filter(test).map(r => r._row).sort((a, c) => c - a).forEach(r => sheet_(key).deleteRow(r));
+  delRows('tributes', t => t.guestId === oldId || t.hostId === oldId);
+  delRows('blog', p => p.guestId === oldId);
   sheet_(me.key).deleteRow(me.user._row);
   append_(toKey, obj);
-  return { ok: true, role: toKey === 'hosts' ? 'host' : 'guest', id: id, token: token };
+  return { ok: true, role: ROLE_OF_KEY[toKey], id: id, token: token };
 }
 
 // ---------- ポイント ----------
@@ -429,8 +440,12 @@ function deleteBlog_(b) {
 // ---------- 管理 ----------
 function admin_(b) {
   const s = settings_();
-  if (String(b.adminPassword || '') !== String(s.adminPassword)) throw new Error('合鍵（管理パスワード）がちがいます');
+  // 合鍵か、ボーイとしてログインしていれば入れる
+  const isBoy = b.role === 'boy' && me_(b);
+  if (!isBoy && String(b.adminPassword || '') !== String(s.adminPassword)) throw new Error('合鍵（管理パスワード）がちがいます');
   switch (b.op) {
+    case 'checkKey':
+      return { ok: true };
     case 'check':
       return { ok: true, settings: Object.assign(publicSettings_(s), { roomKey: s.roomKey }),
                guests: rows_('guests').map(g => ({ id: g.id, name: g.name, points: Number(g.points) || 0 })) };

@@ -367,6 +367,23 @@ body.entry-open { overflow: hidden; }
 .snd.off { color: var(--mute); }
 .snd .mi { font-size: 20px; }
 
+/* ---------- ボーイ（スタッフ） ---------- */
+.entry-roles.three { grid-template-columns: 1fr 1fr 1fr; }
+.entry-roles.three .entry-role span { font-size: 10.5px; }
+.entry-role.boy .ic { background: linear-gradient(150deg, #3b3b3b, #0d0d0d); box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(233,201,119,.35); }
+.entry-role.boy .ic .mi { color: var(--gold); }
+.entry-role.boy.sel { border-color: var(--gold); background: rgba(233,201,119,.1); }
+.staff-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; background: none; color: var(--mute); font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .3em; padding: 4px 8px; opacity: .7; }
+.staff-link .mi { font-size: 14px; }
+.mcard.boy .mc-type { background: #111; color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.boy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.bcard { text-align: center; padding: 14px 6px 12px; border-radius: 12px; background: linear-gradient(180deg, rgba(20,17,12,.9), rgba(8,7,5,.9)); border: 1px solid rgba(233,201,119,.25); }
+.bcard .av { --s: 56px; margin: 0 auto 8px; }
+.bcard .av .face { box-shadow: 0 0 0 2px #111, 0 0 0 3.5px var(--gold); }
+.bcard b { display: block; font-family: 'Shippori Mincho B1', serif; font-size: 14px; }
+.bcard span { display: block; font-size: 10.5px; color: var(--gold); letter-spacing: .1em; margin-top: 2px; min-height: 1.3em; }
+.ask input { width: 100%; text-align: center; font-size: 16px; padding: 11px; border-radius: 14px; border: 1px solid rgba(233,201,119,.4); background: rgba(0,0,0,.45); color: var(--text); outline: none; margin: -6px 0 16px; }
+
 /* ---------- 確認ダイアログ ---------- */
 .ask-bg { position: fixed; inset: 0; z-index: 350; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(3,2,1,.7); animation: viewIn .25s ease both; }
 .ask { width: 100%; max-width: 360px; text-align: center; padding: 24px 20px 20px; animation: entryIn .35s cubic-bezier(.22,1,.36,1) both; }
@@ -628,6 +645,7 @@ footer button, .entry-foot button { display: inline-flex; align-items: center; g
   <section class="view" id="v-hosts">
     <div class="heading"><span class="en">CAST</span><span class="ja">在籍ホスト</span></div>
     <div class="host-grid" id="host-grid"></div>
+    <div id="boy-roster"></div>
   </section>
 
   <!-- ホスト詳細 -->
@@ -931,6 +949,9 @@ function renderHosts() {
   $('host-grid').innerHTML = list.length ? list.map(h => `
     <div class="hcard" data-host="${esc(h.id)}">${avatar(h, { rank: h.rank, score: h.score })}<b>${esc(h.name)}</b><span>${esc(h.catch || '')}</span></div>`).join('')
     : `<div class="empty" style="grid-column:1/-1">まだホストがいません</div>`;
+  const boys = S.data.boys || [];
+  $('boy-roster').innerHTML = boys.length ? `<div class="heading"><span class="en">STAFF</span><span class="ja">在籍ボーイ</span></div>
+    <div class="boy-grid">${boys.map(x => `<div class="bcard">${avatar(x, { noAura: true })}<b>${esc(x.name)}</b><span>${esc(x.catch || 'STAFF')}</span></div>`).join('')}</div>` : '';
 }
 
 function renderHost() {
@@ -1119,7 +1140,20 @@ function renderMe() {
   const el = $('v-me');
   const me = S.data?.me;
   if (!me) { el.innerHTML = ''; showEntry(); return; }
-  if (me.role === 'guest') renderGuestMe(el, me); else renderHostMe(el, me);
+  if (me.role === 'guest') renderGuestMe(el, me);
+  else if (me.role === 'boy') renderBoyMe(el, me);
+  else renderHostMe(el, me);
+}
+function renderBoyMe(el, me) {
+  const b = (S.data.boys || []).find(x => x.id === me.id) || { name: me.name };
+  el.innerHTML = `
+    <div class="me-head">${avatar(b, { noAura: true })}<div><span class="role">STAFF</span><b>${esc(me.name)}</b><span class="muted">${esc(b.catch || 'ボーイ')}</span></div></div>
+    <div class="card" style="margin-top:16px;text-align:center">
+      <div class="backyard-tag">${mi('key')}STAFF ONLY</div>
+      <p class="muted" style="margin:12px 0 14px;line-height:1.7">ボーイはお店の裏方です。<br>バックヤードには合鍵なしで入れます。</p>
+      <button class="btn block" data-go="admin">${mi('door_open')}バックヤードを開く</button>
+    </div>
+    ${settingsHtml(b, 'boy')}`;
 }
 function renderGuestMe(el, me) {
   const g = guestById(me.id) || { name: me.name };
@@ -1140,7 +1174,7 @@ function renderGuestMe(el, me) {
       : `<div class="card empty">まだ誰にも貢いでいません<br><button class="btn rose" data-go="hosts" style="margin-top:12px">${mi('groups')}ホストを選ぶ</button></div>`}
     <div class="heading"><span class="en">HISTORY</span><span class="ja">貢いだ記録</span></div>
     <div class="feed">${feedHtml(me.history || [], { mode: 'guest', empty: 'まだ記録はありません' })}</div>
-    ${settingsHtml(g)}`;
+    ${settingsHtml(g, 'guest')}`;
   countUp(el.querySelector('.wallet'));
 }
 function renderHostMe(el, me) {
@@ -1170,23 +1204,25 @@ function renderHostMe(el, me) {
       : '<div class="empty">まだいません</div>'}</div>
     <div class="heading"><span class="en">GIFTS</span><span class="ja">もらった貢ぎ物</span></div>
     <div class="feed">${feedHtml(me.history || [], { mode: 'host', empty: 'まだ記録はありません' })}</div>
-    ${settingsHtml(h, true)}`;
+    ${settingsHtml(h, 'host')}`;
   countUp(el.querySelector('.host-board'));
 }
-function settingsHtml(p, isHost) {
+function settingsHtml(p, role) {
+  const others = ['guest', 'host', 'boy'].filter(r => r !== role);
+  const lost = role === 'host' ? 'ランキングのポイント・フレーム・もらった貢ぎ物の記録' : role === 'guest' ? '所持ポイント・ブログ・貢いだ記録' : 'ボーイとしての登録';
   return `
     <div class="heading"><span class="en">SETTING</span><span class="ja">プロフィール設定</span></div>
     <div class="card auth">
       <div class="icon-pick"><div id="icon-prev">${avatar({ name: p.name, icon: pendingIcon || p.icon }, { noAura: true, size: 72 })}</div>
         <label class="btn ghost">${mi('add_photo_alternate')}アイコンを変える<input type="file" accept="image/*" id="icon-file" hidden></label></div>
       <div class="field"><label>名前</label><input id="f-name-edit" maxlength="20" value="${esc(p.name || '')}"></div>
-      ${isHost ? `<div class="field"><label>キャッチコピー</label><input id="f-catch" maxlength="40" value="${esc(p.catch || '')}"></div>` : ''}
+      ${role !== 'guest' ? `<div class="field"><label>${role === 'boy' ? '肩書き（例：店長、黒服）' : 'キャッチコピー'}</label><input id="f-catch" maxlength="40" value="${esc(p.catch || '')}"></div>` : ''}
       <div class="field"><label>新しいパスワード（変えるときだけ）</label><input id="f-newpass" type="password" autocomplete="new-password"></div>
       <button class="btn block" id="profile-save">${mi('check')}保存する</button>
       <div class="me-actions"><button class="btn ghost" id="logout">${mi('logout')}ログアウト</button></div>
       <div class="danger">
-        <p class="muted">${mi('swap_horiz')} <b>陣営の変更</b>：${isHost ? 'ホストからお客様' : 'お客様からホスト'}に変わります。名前・アイコン・パスワードは引き継ぎますが、${isHost ? 'ランキングのポイント・フレーム・太客などの記録' : '所持ポイント・ブログ・推しの記録'}はすべてリセットされます。</p>
-        <button class="btn ghost block" id="role-switch">${mi('swap_horiz')}${isHost ? 'お客様' : 'ホスト'}に変わる</button>
+        <p class="muted">${mi('swap_horiz')} <b>陣営の変更</b>：名前・アイコン・パスワードは引き継ぎますが、${lost}はすべてリセットされます。</p>
+        <div class="me-actions" style="margin-top:0">${others.map(r => `<button class="btn ghost" id="role-switch" data-to="${r}">${mi(r === 'boy' ? 'key' : 'swap_horiz')}${ROLE_JA[r]}に変わる</button>`).join('')}</div>
       </div>
     </div>`;
 }
@@ -1504,17 +1540,17 @@ function uploadPendingIcon() {
 
 // ---------- 入店画面（ログイン・新規登録） ----------
 // 登録の流れ：来店のしかた（お客様／ホスト）→ 名前 → パスワード → アイコン →（ホストはキャッチコピー）→（合言葉）→ 会員証の確認
-const E = { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false };
+const E = { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false, staffOk: false, staffKey: '' };
 function entrySteps() {
   const st = ['role', 'name', 'pass', 'icon'];
-  if (E.role === 'host') st.push('catch');
-  if (S.data?.settings?.needsKey) st.push('key');
+  if (E.role === 'host' || E.role === 'boy') st.push('catch');
+  if (S.data?.settings?.needsKey && E.role !== 'boy') st.push('key');
   st.push('review');
   return st;
 }
 function showEntry() {
   if ($('entry').classList.contains('show')) return;
-  Object.assign(E, { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false });
+  Object.assign(E, { step: 'welcome', role: '', name: '', pass: '', icon: null, catch: '', key: '', back: false, staffOk: false, staffKey: '' });
   document.body.classList.add('entry-open');
   $('entry').classList.add('show');
   renderEntry(true);
@@ -1534,10 +1570,12 @@ function entryNav(ok, label) {
     <button class="btn" data-e="next" ${ok ? '' : 'disabled'}>${E.back ? '確認にもどる' : (label || 'つぎへ')}${mi('arrow_forward')}</button></div>`;
 }
 function roleCards(sel) {
-  return `<div class="entry-roles">
+  const boy = E.staffOk;
+  return `<div class="entry-roles${boy ? ' three' : ''}">
     <button class="entry-role guest${sel === 'guest' ? ' sel' : ''}" data-role="guest"><span class="ic">${mi('favorite')}</span><b>お客様</b><span>ブログでポイントを貯めて<br>推しのホストに貢ぐ</span></button>
     <button class="entry-role host${sel === 'host' ? ' sel' : ''}" data-role="host"><span class="ic">${mi('nightlife')}</span><b>ホスト</b><span>登録するだけ。<br>ブログにいいねできる</span></button>
-  </div>`;
+    ${boy ? `<button class="entry-role boy${sel === 'boy' ? ' sel' : ''}" data-role="boy"><span class="ic">${mi('room_service')}</span><b>ボーイ</b><span>お店の裏方。<br>スタッフ専用</span></button>` : ''}
+  </div>${boy ? '' : `<button class="staff-link" data-e="staff">${mi('key')}STAFF</button>`}`;
 }
 function renderEntry(animate) {
   const card = $('entry-card'), dots = $('entry-dots');
@@ -1545,7 +1583,7 @@ function renderEntry(animate) {
   dots.innerHTML = idx >= 0 ? st.map((x, i) => `<span class="${i < idx ? 'done' : i === idx ? 'cur' : ''}"></span>`).join('') : '';
   $('entry-club').textContent = S.data?.settings?.clubName || 'CLUB Gemma';
   const club = esc(S.data?.settings?.clubName || 'CLUB Gemma');
-  const roleJa = E.role === 'host' ? 'ホスト' : 'お客様';
+  const roleJa = ROLE_JA[E.role] || 'お客様';
   let h = '';
   switch (E.step) {
     case 'welcome':
@@ -1583,7 +1621,11 @@ function renderEntry(animate) {
         <p class="entry-hint">${E.icon ? 'タップすると選び直せます' : '選んだあと、好きな部分を丸く切り取れます'}</p>` + entryNav(!!E.icon);
       break;
     case 'catch':
-      h = `<div class="entry-kicker">STEP 5</div><div class="entry-title">キャッチコピーは？</div>
+      h = E.role === 'boy'
+        ? `<div class="entry-kicker">STEP 5</div><div class="entry-title">肩書きは？</div>
+        <input class="entry-input" id="e-catch" maxlength="40" placeholder="例：店長、黒服、新人ボーイ" value="${esc(E.catch)}">
+        <p class="entry-hint">在籍ボーイの一覧で名前の下に出ます（なくてもOK）</p>` + entryNav(true)
+        : `<div class="entry-kicker">STEP 5</div><div class="entry-title">キャッチコピーは？</div>
         <input class="entry-input" id="e-catch" maxlength="40" placeholder="例：今夜、君だけの王子様" value="${esc(E.catch)}">
         <p class="entry-hint">ランキングで名前の下に出ます（なくてもOK・あとで変えられます）</p>` + entryNav(true);
       break;
@@ -1596,10 +1638,10 @@ function renderEntry(animate) {
       const row = (label, val, step) => `<div class="mc-row"><small>${label}</small>${val}<button data-edit="${step}">変更</button></div>`;
       h = `<div class="entry-kicker">CONFIRM</div><div class="entry-title">この内容で登録します</div>
         <div class="mcard ${E.role}">
-          <div class="mc-top"><span class="mc-club">${club}</span><span class="mc-type">${E.role === 'host' ? 'CAST' : 'MEMBER'}</span></div>
+          <div class="mc-top"><span class="mc-club">${club}</span><span class="mc-type">${{ host: 'CAST', boy: 'STAFF' }[E.role] || 'MEMBER'}</span></div>
           <div class="mc-body">${avatar({ name: E.name, icon: E.icon }, { noAura: true })}
             <div style="flex:1;min-width:0">${row('名前', `<b>${esc(E.name)}</b>`, 'name')}${row('種類', roleJa, 'role')}
-            ${E.role === 'host' ? row('キャッチ', `<span>${esc(E.catch) || '―'}</span>`, 'catch') : ''}${row('アイコン', '', 'icon')}</div>
+            ${E.role !== 'guest' ? row(E.role === 'boy' ? '肩書き' : 'キャッチ', `<span>${esc(E.catch) || '―'}</span>`, 'catch') : ''}${row('アイコン', '', 'icon')}</div>
           </div>
         </div>
         <button class="btn block" data-e="submit">${mi('send')}登録する</button>
@@ -1607,9 +1649,10 @@ function renderEntry(animate) {
       break;
     }
     case 'done':
-      h = `<div class="entry-burst"></div><div class="entry-kicker">WELCOME</div><div class="entry-title big">${E.role === 'host' ? '入店' : 'ご来店'}<br>ありがとう</div>
+      h = `<div class="entry-burst"></div><div class="entry-kicker">WELCOME</div><div class="entry-title big">${E.role === 'guest' ? 'ご来店' : '入店'}<br>ありがとう</div>
         <div style="margin:4px auto 16px;width:fit-content">${avatar({ name: E.name, icon: E.icon }, { noAura: true, size: 96, rank: 1, score: 1 })}</div>
-        <p class="entry-text">${E.role === 'host'
+        <p class="entry-text">${E.role === 'boy' ? `${esc(E.name)}、今日からよろしく。<br>お店の裏方をお願いします。<br>バックヤードには合鍵なしで入れます。`
+          : E.role === 'host'
           ? `${esc(E.name)}、今日からよろしく。<br>お客様からの貢ぎ物でランキングが決まります。`
           : `${esc(E.name)} 様、ようこそ。<br>ブログを書いてポイントを貯めて、<br>推しのホストに貢ぎましょう。`}</p>
         <button class="btn block" data-e="enter">${mi('door_open')}お店に入る</button>`;
@@ -1645,6 +1688,7 @@ function entryAction(a) {
     case 'prev': entryPrev(); break;
     case 'next': if (E.step === 'name') entryNameNext(); else entryNext(); break;
     case 'pickicon': $('entry-icon-file').click(); break;
+    case 'staff': askStaffKey().then(k => { if (!k) return; E.staffOk = true; E.staffKey = k; E.role = 'boy'; renderEntry(false); }); break;
     case 'dologin': entryLogin(); break;
     case 'submit': entrySubmit(); break;
     case 'enter': hideEntry(); go('rank'); break;
@@ -1664,12 +1708,13 @@ function entryLogin() {
     loading(false); hideEntry(); go('rank');
     Sfx.play('enter');
     toast(`${mi('celebration')}<span>おかえりなさい、<b>${esc(name)}</b>${E.role === 'guest' ? ' 様' : ''}</span>`);
+    if (E.role === 'boy') go('me');
   }).catch(err => { loading(false); toast(err.message, true); });
 }
 function entrySubmit() {
   loading(true);
   (E.icon ? api('uploadIcon', { image: E.icon }).then(r => r.url) : Promise.resolve(''))
-    .then(icon => api('register', { role: E.role, name: E.name, password: E.pass, icon, catch: E.catch, key: E.key }))
+    .then(icon => api('register', { role: E.role, name: E.name, password: E.pass, icon, catch: E.catch, key: E.key, staffKey: E.staffKey }))
     .then(signedIn)
     .then(() => { loading(false); entryGo('done'); Sfx.play('welcome'); })
     .catch(err => { loading(false); toast(err.message, true); });
@@ -1701,30 +1746,48 @@ $('entry-icon-file').addEventListener('change', e => {
 });
 
 // きれいな確認ダイアログ（OKなら true）
-function ask(title, html, okLabel, icon) {
+// input を付けると、入力した文字（やめたら null）を返す
+function ask(title, html, okLabel, icon, input) {
   return new Promise(resolve => {
     const bg = document.createElement('div'); bg.className = 'ask-bg';
     bg.innerHTML = `<div class="card ask"><div class="ic">${mi(icon || 'help')}</div><h4>${title}</h4><p>${html}</p>
+      ${input ? `<input type="password" placeholder="${esc(input)}" autocomplete="off">` : ''}
       <div class="row"><button class="btn ghost" data-a="0">やめる</button><button class="btn rose" data-a="1">${okLabel}</button></div></div>`;
     document.body.appendChild(bg);
+    const inp = bg.querySelector('input');
+    if (inp) { setTimeout(() => inp.focus(), 60); inp.addEventListener('keydown', e => { if (e.key === 'Enter') bg.querySelector('[data-a="1"]').click(); }); }
     bg.addEventListener('click', e => {
       const b = e.target.closest('[data-a]');
       if (!b && e.target !== bg) return;
-      bg.remove(); resolve(!!b && b.dataset.a === '1');
+      const ok = !!b && b.dataset.a === '1';
+      bg.remove(); resolve(input ? (ok ? inp.value : null) : ok);
     });
   });
 }
+const ROLE_JA = { guest: 'お客様', host: 'ホスト', boy: 'ボーイ' };
+// スタッフ用の合鍵を確かめる（合っていれば鍵を返す）
+async function askStaffKey() {
+  const key = await ask('スタッフ専用', 'ボーイになるには<b>合鍵（管理パスワード）</b>が必要です。', '確かめる', 'key', '合鍵');
+  if (!key) return null;
+  loading(true);
+  try { await api('admin', { adminPassword: key, op: 'checkKey' }); loading(false); return key; }
+  catch (err) { loading(false); toast(err.message, true); return null; }
+}
 // 陣営の変更：確認を2回とってから
-async function switchRole() {
-  const me = S.data.me, toJa = me.role === 'host' ? 'お客様' : 'ホスト';
-  const lost = me.role === 'host' ? 'ランキングのポイント・フレーム・太客などの記録' : `所持ポイント（<b>${fmt(me.points)}pt</b>）・ブログ・推しの記録`;
+async function switchRole(to) {
+  const me = S.data.me, toJa = ROLE_JA[to];
+  let staffKey = '';
+  if (to === 'boy') { staffKey = await askStaffKey(); if (!staffKey) return; }
+  const lost = me.role === 'host' ? 'ランキングのポイント・フレーム・もらった貢ぎ物の記録'
+    : me.role === 'guest' ? `所持ポイント（<b>${fmt(me.points)}pt</b>）・ブログ・貢いだ記録` : 'ボーイとしての登録';
   if (!await ask(`${toJa}に変わりますか？`, `${esc(me.name)} さんの${lost}は<b>すべてリセット</b>されます。<br>名前・アイコン・パスワードは引き継ぎます。`, 'つぎへ', 'swap_horiz')) return;
   if (!await ask('最終確認', `本当に${toJa}に変わりますか？<br><b>リセットした記録は元に戻せません。</b>`, `${toJa}に変わる`, 'warning')) return;
   loading(true);
   try {
-    const r = await api('switchRole', Object.assign(authBody(), { confirm: 'switch' }));
+    const r = await api('switchRole', Object.assign(authBody(), { confirm: 'switch', to, staffKey }));
     S.session = { role: r.role, token: r.token, id: r.id };
     store.set('hc_session', S.session);
+    S.adminData = null; S.adminPass = null;
     await load();
     loading(false);
     renderMe();
@@ -1751,6 +1814,12 @@ function saveProfile() {
 // ---------- 管理 ----------
 function renderAdmin() {
   const el = $('v-admin');
+  // ボーイはそのまま入れる
+  if (!S.adminData && isBoy()) {
+    el.innerHTML = '<div class="skeleton"></div>';
+    adminCall('check').then(r => { S.adminData = r; renderAdmin(); }).catch(() => {});
+    return;
+  }
   if (!S.adminData) {
     el.innerHTML = `<div class="heading"><span class="en">BACKYARD</span><span class="ja">バックヤード</span></div>
       <div class="card" style="text-align:center">
@@ -1800,6 +1869,8 @@ function renderAdmin() {
       ${(S.data.hosts || []).map(h => adminUserRow('host', h.id, h.name)).join('') || '<div class="empty">なし</div>'}
       <div class="muted" style="margin-top:14px">お客様</div>
       ${a.guests.map(g => adminUserRow('guest', g.id, g.name)).join('') || '<div class="empty">なし</div>'}
+      <div class="muted" style="margin-top:14px">ボーイ</div>
+      ${(S.data.boys || []).map(x => adminUserRow('boy', x.id, x.name)).join('') || '<div class="empty">なし</div>'}
     </div>
     <p class="muted" style="text-align:center;margin-top:16px">バックヤードにいる間は、ブログの各記事に「ポイント没収」「削除」ボタンが出ます</p>
     <p style="text-align:center;margin-top:8px"><button class="btn rose" data-go="blog">${mi('edit_note')}ブログを確認する</button></p>
@@ -1820,9 +1891,10 @@ function adminUserRow(role, id, name) {
     <button data-reset="${role}:${esc(id)}">${mi('key')} パス再設定</button>
     <button data-deluser="${role}:${esc(id)}">${mi('delete')} 削除</button></div>`;
 }
+const isBoy = () => S.data?.me?.role === 'boy';
 function adminCall(op, extra) {
   loading(true);
-  return api('admin', Object.assign({ adminPassword: S.adminPass, op }, extra || {}))
+  return api('admin', Object.assign({ adminPassword: S.adminPass, op }, isBoy() ? authBody() : {}, extra || {}))
     .then(r => { loading(false); return r; })
     .catch(err => { loading(false); toast(err.message, true); throw err; });
 }
@@ -1852,7 +1924,7 @@ document.addEventListener('click', e => {
     case 'b-post': postBlog(); break;
     case 'logout': S.session = null; store.del('hc_session'); load().then(() => { go('rank'); showEntry(); toast(`${mi('waving_hand')}<span>ログアウトしました</span>`); }); break;
     case 'profile-save': saveProfile(); break;
-    case 'role-switch': switchRole(); break;
+    case 'role-switch': switchRole(t.dataset.to); break;
     case 'bonus':
       loading(true);
       api('claimBonus', authBody()).then(r => { loading(false); playFx({ price: 0, sound: 'coin', icon: 'paid', giftName: `+${fmt(r.bonus)}pt`, label: 'DAILY BONUS', line: '今日のボーナスを受け取りました' }); return load(); })
@@ -1863,7 +1935,7 @@ document.addEventListener('click', e => {
       S.adminPass = $('a-pass').value;
       adminCall('check').then(r => { S.adminData = r; renderAdmin(); }).catch(() => {});
       break;
-    case 'a-exit': S.adminPass = null; S.adminData = null; go('rank'); if (!S.data?.me) showEntry(); break;
+    case 'a-exit': S.adminPass = null; S.adminData = null; go(isBoy() ? 'me' : 'rank'); if (!S.data?.me) showEntry(); break;
     case 'a-save-settings':
       adminCall('saveSettings', { settings: { clubName: $('a-club').value, initialPoints: $('a-init').value, dailyBonus: $('a-bonus').value, roomKey: $('a-key').value,
         blogDailyMax: $('a-bmax').value, blogPostMax: $('a-bpmax').value, blogCharPoint: $('a-bcp').value, blogCharMax: $('a-bcmax').value,
@@ -1982,15 +2054,16 @@ const Demo = (function () {
       const chars = body.replace(/\s/g, '').length, likes = [['h1', 'h3'], ['h2'], []][i];
       return { id: 'b' + i, at: iso(now - h * hr), guestId: g, title, body, chars, earns: true, likes, revoked: false, points: blogPts(settings, chars, likes.length) };
     });
-    return { settings, hosts, guests, gifts, tributes, posts };
+    const boys = [{ id: 'b1', name: '黒崎', icon: '', catch: '店長', pass: '1234', token: 'tok-b1' }];
+    return { settings, hosts, guests, gifts, tributes, posts, boys };
   }
   let db = store.get(KEY);
-  if (!db || !db.settings.blogLikeMax) db = seed();
+  if (!db || !db.settings.blogLikeMax || !db.boys) db = seed();
   const save = () => store.set(KEY, db);
   const month = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
   const day = d => new Date(d).toDateString();
   const fail = m => Promise.reject(new Error(m));
-  const roleList = r => r === 'host' ? db.hosts : db.guests;
+  const roleList = r => r === 'host' ? db.hosts : r === 'boy' ? db.boys : db.guests;
   const meOf = b => b.token && roleList(b.role).find(u => u.token === b.token);
   const addPts = (gid, d) => { const g = db.guests.find(x => x.id === gid); if (g) g.points = Math.max(0, g.points + d); };
   function readAll(b) {
@@ -2009,6 +2082,7 @@ const Demo = (function () {
           patrons: Object.keys(pat).map(id => ({ id, total: pat[id] })).sort((a, b) => b.total - a.total).slice(0, 3) };
       }),
       guests: db.guests.map(g => ({ id: g.id, name: g.name, icon: g.icon })),
+      boys: db.boys.map(x => ({ id: x.id, name: x.name, icon: x.icon, catch: x.catch })),
       tributes: db.tributes.slice(-60).reverse()
     };
     const me = meOf(b);
@@ -2030,12 +2104,13 @@ const Demo = (function () {
         case 'uploadIcon': return { url: b.image };
         case 'register': {
           const list = roleList(b.role);
-          if (db.settings.roomKey && b.key !== db.settings.roomKey) return fail('合言葉がちがいます');
+          if (b.role === 'boy') { if (b.staffKey !== db.settings.adminPassword) return fail('合鍵（管理パスワード）がちがいます'); }
+          else if (db.settings.roomKey && b.key !== db.settings.roomKey) return fail('合言葉がちがいます');
           if (!b.name) return fail('名前を入れてください');
           if (String(b.password).length < 4) return fail('パスワードは4文字以上にしてください');
           if (list.some(u => u.name === b.name)) return fail('その名前はもう登録されています');
           const u = { id: (b.role === 'host' ? 'h' : 'c') + Date.now(), name: b.name, icon: b.icon, pass: b.password, token: 'tok' + Math.random() };
-          if (b.role === 'host') u.catch = b.catch; else { u.points = db.settings.initialPoints; u.lastBonus = ''; }
+          if (b.role === 'guest') { u.points = db.settings.initialPoints; u.lastBonus = ''; } else u.catch = b.catch;
           list.push(u); save(); return { id: u.id, token: u.token };
         }
         case 'login': {
@@ -2046,17 +2121,20 @@ const Demo = (function () {
         case 'updateProfile': {
           const u = meOf(b); if (!u) return fail('ログインし直してください');
           if (b.name !== undefined) { if (!b.name) return fail('名前を入れてください'); if (b.name !== u.name && roleList(b.role).some(x => x.name === b.name)) return fail('その名前はもう使われています'); u.name = b.name; }
-          if (b.icon) u.icon = b.icon; if (b.catch !== undefined && b.role === 'host') u.catch = b.catch; if (b.password) u.pass = b.password;
+          if (b.icon) u.icon = b.icon; if (b.catch !== undefined && b.role !== 'guest') u.catch = b.catch; if (b.password) u.pass = b.password;
           save(); return { ok: true };
         }
         case 'switchRole': {
           const u = meOf(b); if (!u) return fail('ログインし直してください');
-          const to = b.role === 'host' ? 'guest' : 'host', list = roleList(to);
+          const to = b.to, list = roleList(to);
+          if (to === b.role) return fail('今と同じ陣営です');
+          if (to === 'boy' && b.staffKey !== db.settings.adminPassword) return fail('合鍵（管理パスワード）がちがいます');
           if (list.some(x => x.name === u.name)) return fail('移る先に同じ名前の人がいます。先に名前を変えてください');
           const from = roleList(b.role); from.splice(from.indexOf(u), 1);
-          if (b.role === 'guest') db.posts = db.posts.filter(p => p.guestId !== u.id);
-          const n = { id: (to === 'host' ? 'h' : 'c') + Date.now(), name: u.name, icon: u.icon, pass: u.pass, token: 'tok' + Math.random() };
-          if (to === 'host') n.catch = ''; else { n.points = db.settings.initialPoints; n.lastBonus = ''; }
+          db.posts = db.posts.filter(p => p.guestId !== u.id);
+          db.tributes = db.tributes.filter(t => t.guestId !== u.id && t.hostId !== u.id);
+          const n = { id: ({ host: 'h', guest: 'c', boy: 'b' })[to] + Date.now(), name: u.name, icon: u.icon, pass: u.pass, token: 'tok' + Math.random() };
+          if (to === 'guest') { n.points = db.settings.initialPoints; n.lastBonus = ''; } else n.catch = '';
           list.push(n); save(); return { role: to, id: n.id, token: n.token };
         }
         case 'claimBonus': {
@@ -2097,7 +2175,9 @@ const Demo = (function () {
           db.tributes.push(t); save(); return { points: u.points, tribute: t };
         }
         case 'admin': {
-          if (b.adminPassword !== db.settings.adminPassword) return fail('管理パスワードがちがいます（デモは admin）');
+          const boyOk = b.role === 'boy' && meOf(b);
+          if (!boyOk && b.adminPassword !== db.settings.adminPassword) return fail('合鍵（管理パスワード）がちがいます（デモは admin）');
+          if (b.op === 'checkKey') return { ok: true };
           if (b.op === 'check') return { settings: db.settings, guests: db.guests.map(g => ({ id: g.id, name: g.name, points: g.points })) };
           if (b.op === 'saveSettings') { const x = b.settings; Object.keys(x).forEach(k => { db.settings[k] = k === 'clubName' || k === 'roomKey' ? x[k] : Math.max(0, +x[k] | 0); }); }
           if (b.op === 'deleteBlog') { const i = db.posts.findIndex(p => p.id === b.id); if (i >= 0) { addPts(db.posts[i].guestId, -db.posts[i].points); db.posts.splice(i, 1); } }
@@ -2114,6 +2194,7 @@ const Demo = (function () {
       }
       return fail('不明な操作です');
     })();
+    if (r && r.catch) r.catch(() => {});   // 先に失敗しても「未処理のエラー」にしない
     return new Promise((res, rej) => setTimeout(() => Promise.resolve(r).then(res, rej), 250));
   }
   return { handle, reset() { db = seed(); save(); } };
