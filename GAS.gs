@@ -441,7 +441,7 @@ function deleteBlog_(b) {
 function admin_(b) {
   const s = settings_();
   // 合鍵か、ボーイとしてログインしていれば入れる
-  const isBoy = b.role === 'boy' && me_(b);
+  const isBoy = b.authRole === 'boy' && me_({ role: 'boy', token: b.authToken });
   if (!isBoy && String(b.adminPassword || '') !== String(s.adminPassword)) throw new Error('合鍵（管理パスワード）がちがいます');
   switch (b.op) {
     case 'checkKey':

@@ -1894,7 +1894,7 @@ function adminUserRow(role, id, name) {
 const isBoy = () => S.data?.me?.role === 'boy';
 function adminCall(op, extra) {
   loading(true);
-  return api('admin', Object.assign({ adminPassword: S.adminPass, op }, isBoy() ? authBody() : {}, extra || {}))
+  return api('admin', Object.assign({ adminPassword: S.adminPass, op }, isBoy() ? { authRole: 'boy', authToken: S.session.token } : {}, extra || {}))
     .then(r => { loading(false); return r; })
     .catch(err => { loading(false); toast(err.message, true); throw err; });
 }
@@ -2175,7 +2175,7 @@ const Demo = (function () {
           db.tributes.push(t); save(); return { points: u.points, tribute: t };
         }
         case 'admin': {
-          const boyOk = b.role === 'boy' && meOf(b);
+          const boyOk = b.authRole === 'boy' && meOf({ role: 'boy', token: b.authToken });
           if (!boyOk && b.adminPassword !== db.settings.adminPassword) return fail('合鍵（管理パスワード）がちがいます（デモは admin）');
           if (b.op === 'checkKey') return { ok: true };
           if (b.op === 'check') return { settings: db.settings, guests: db.guests.map(g => ({ id: g.id, name: g.name, points: g.points })) };
