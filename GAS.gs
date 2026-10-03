@@ -11,7 +11,7 @@ const SHEETS = {
   hosts:    { name: 'ホスト',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
   boys:     { name: 'ボーイ',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
   guests:   { name: 'お客様',   cols: ['id', 'name', 'icon', 'points', 'passHash', 'token', 'createdAt', 'lastBonus', 'blogDay', 'blogCount'] },
-  gifts:    { name: '貢ぎ物',   cols: ['id', 'name', 'price', 'icon'] },
+  gifts:    { name: '貢ぎ物',   cols: ['id', 'name', 'price', 'icon', 'cat'] },
   tributes: { name: '貢ぎ履歴', cols: ['id', 'at', 'guestId', 'hostId', 'giftId', 'giftName', 'price', 'icon', 'message'] },
   settings: { name: '設定',     cols: ['key', 'value', 'memo'] },
   blog:     { name: 'ブログ',   cols: ['id', 'at', 'guestId', 'title', 'body', 'points', 'chars', 'earns', 'likes', 'revoked'] }
@@ -31,14 +31,19 @@ const DEFAULT_SETTINGS = [
   ['adminPassword', 'changeme', '管理画面のパスワード（必ず変えてください）']
 ];
 const DEFAULT_GIFTS = [
-  ['g1', 'ドリンク', 1000, 'local_bar'],
-  ['g2', '指名', 3000, 'favorite'],
-  ['g3', '花束', 8000, 'local_florist'],
-  ['g4', 'ケーキ', 15000, 'cake'],
-  ['g5', 'ボトル', 30000, 'liquor'],
-  ['g6', 'ブランド時計', 80000, 'watch'],
-  ['g7', '高級ボトル', 150000, 'wine_bar'],
-  ['g8', 'シャンパン', 450000, 'celebration']
+  ['g1',  'シングル', 1000, 'local_bar', 'CAST DRINK'],
+  ['g2',  'ダブル', 1800, 'sports_bar', 'CAST DRINK'],
+  ['g3',  'トリプル', 3000, 'liquor', 'CAST DRINK'],
+  ['g4',  'ショット（テキーラ、クライナー等）', 3000, 'local_drink', 'CAST DRINK'],
+  ['g5',  'テキーラ観覧車（12）', 36000, 'attractions', 'TEQUILA'],
+  ['g6',  'テキーラ観覧車（24）', 72000, 'attractions', 'TEQUILA'],
+  ['g7',  'シンデレラ', 100000, 'diamond', 'CHAMPAGNE'],
+  ['g8',  'ヴーヴ', 150000, 'wine_bar', 'CHAMPAGNE'],
+  ['g9',  'ドンペリ', 180000, 'liquor', 'CHAMPAGNE'],
+  ['g10', 'アルマンド', 200000, 'workspace_premium', 'CHAMPAGNE'],
+  ['g11', 'エンジェル', 280000, 'auto_awesome', 'CHAMPAGNE'],
+  ['g12', 'シャンパンタワー', 450000, 'celebration', 'SPECIAL'],
+  ['g13', 'フード（ポテト・唐揚げ・枝豆など）', 3000, 'fastfood', 'FOOD']
 ];
 const NUM_SETTINGS = ['initialPoints', 'dailyBonus', 'blogDailyMax', 'blogMinChars', 'blogCharPoint', 'blogCharMax', 'blogLikePoint', 'blogLikeMax', 'blogPostMax'];
 
@@ -109,7 +114,7 @@ function setup_() {
     sh.getRange(1, 1, 1, def.cols.length).setValues([def.cols]).setFontWeight('bold');
     sh.setFrozenRows(1);
     if (key === 'settings') sh.getRange(2, 1, DEFAULT_SETTINGS.length, 3).setValues(DEFAULT_SETTINGS);
-    if (key === 'gifts') sh.getRange(2, 1, DEFAULT_GIFTS.length, 4).setValues(DEFAULT_GIFTS);
+    if (key === 'gifts') sh.getRange(2, 1, DEFAULT_GIFTS.length, 5).setValues(DEFAULT_GIFTS);
   });
 }
 function rows_(key) {
@@ -180,7 +185,7 @@ function readAll_(b) {
   const hosts = rows_('hosts');
   const guests = rows_('guests');
   const tributes = rows_('tributes');
-  const gifts = rows_('gifts').map(g => ({ id: String(g.id), name: g.name, price: Number(g.price) || 0, icon: g.icon || 'redeem' }))
+  const gifts = rows_('gifts').map(g => ({ id: String(g.id), name: g.name, price: Number(g.price) || 0, icon: g.icon || 'redeem', cat: g.cat || 'OTHER' }))
     .sort((a, b) => a.price - b.price);
   const month = monthOf_(nowIso_());
   const dayAgo = Date.now() - 24 * 3600 * 1000;
@@ -437,6 +442,12 @@ function deleteBlog_(b) {
   return { ok: true };
 }
 
+function writeGifts_(list) {
+  const sh = sheet_('gifts');
+  if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 5).clearContent();
+  if (list.length) sh.getRange(2, 1, list.length, 5).setValues(list);
+}
+
 // ---------- 管理 ----------
 function admin_(b) {
   const s = settings_();
@@ -456,13 +467,14 @@ function admin_(b) {
       return { ok: true };
     }
     case 'saveGifts': {
-      const list = (b.gifts || []).map(g => [clean_(g.id, 20) || newId_('g'), safe_(clean_(g.name, 20)), Math.max(1, Math.floor(Number(g.price) || 0)), clean_(g.icon, 40) || 'redeem'])
+      const list = (b.gifts || []).map(g => [clean_(g.id, 20) || newId_('g'), safe_(clean_(g.name, 30)), Math.max(1, Math.floor(Number(g.price) || 0)), clean_(g.icon, 40) || 'redeem', clean_(g.cat, 20) || 'OTHER'])
         .filter(g => g[1]);
-      const sh = sheet_('gifts');
-      if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 4).clearContent();
-      if (list.length) sh.getRange(2, 1, list.length, 4).setValues(list);
+      writeGifts_(list);
       return { ok: true };
     }
+    case 'resetGifts':
+      writeGifts_(DEFAULT_GIFTS);
+      return { ok: true };
     case 'givePoints': {
       const amount = Math.floor(Number(b.amount) || 0);
       const targets = b.guestId === 'all' ? rows_('guests') : rows_('guests').filter(g => g.id === b.guestId);
