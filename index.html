@@ -827,6 +827,8 @@ function load(opts) {
   return api('readAll', authBody()).then(d => {
     const first = !S.data;
     S.data = d;
+    // GASが古いまま（月間の数字しかない）でも表示が崩れないように
+    (d.hosts || []).forEach(h => { if (h.week === undefined) h.week = h.month || 0; });
     applyLikeOverrides();
     store.set('hc_cache', d);
     if (S.session && !d.me) { S.session = null; store.del('hc_session'); }
