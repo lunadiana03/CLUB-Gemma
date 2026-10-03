@@ -367,6 +367,19 @@ body.entry-open { overflow: hidden; }
 .snd.off { color: var(--mute); }
 .snd .mi { font-size: 20px; }
 
+/* ---------- 確認ダイアログ ---------- */
+.ask-bg { position: fixed; inset: 0; z-index: 350; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(3,2,1,.7); animation: viewIn .25s ease both; }
+.ask { width: 100%; max-width: 360px; text-align: center; padding: 24px 20px 20px; animation: entryIn .35s cubic-bezier(.22,1,.36,1) both; }
+.ask .ic { width: 54px; height: 54px; margin: 0 auto 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,126,182,.14); box-shadow: inset 0 0 0 1px rgba(255,126,182,.5); }
+.ask .ic .mi { font-size: 28px; color: var(--rose); }
+.ask h4 { font-family: 'Shippori Mincho B1', serif; font-size: 19px; margin: 0 0 10px; }
+.ask p { color: var(--sub); font-size: 13px; line-height: 1.8; margin: 0 0 18px; }
+.ask p b { color: var(--gold3); }
+.ask .row { display: flex; gap: 8px; }
+.ask .row .btn { flex: 1; padding-left: 10px; padding-right: 10px; }
+.danger { margin-top: 22px; padding-top: 16px; border-top: 1px dashed rgba(233,201,119,.25); }
+.danger .muted { line-height: 1.7; margin: 0 0 10px; }
+
 /* ---------- 下のナビ ---------- */
 nav.bn { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; gap: 4px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(7,6,5,0), rgba(7,6,5,.94) 35%); }
@@ -1166,10 +1179,15 @@ function settingsHtml(p, isHost) {
     <div class="card auth">
       <div class="icon-pick"><div id="icon-prev">${avatar({ name: p.name, icon: pendingIcon || p.icon }, { noAura: true, size: 72 })}</div>
         <label class="btn ghost">${mi('add_photo_alternate')}アイコンを変える<input type="file" accept="image/*" id="icon-file" hidden></label></div>
+      <div class="field"><label>名前</label><input id="f-name-edit" maxlength="20" value="${esc(p.name || '')}"></div>
       ${isHost ? `<div class="field"><label>キャッチコピー</label><input id="f-catch" maxlength="40" value="${esc(p.catch || '')}"></div>` : ''}
       <div class="field"><label>新しいパスワード（変えるときだけ）</label><input id="f-newpass" type="password" autocomplete="new-password"></div>
       <button class="btn block" id="profile-save">${mi('check')}保存する</button>
       <div class="me-actions"><button class="btn ghost" id="logout">${mi('logout')}ログアウト</button></div>
+      <div class="danger">
+        <p class="muted">${mi('swap_horiz')} <b>陣営の変更</b>：${isHost ? 'ホストからお客様' : 'お客様からホスト'}に変わります。名前・アイコン・パスワードは引き継ぎますが、${isHost ? 'ランキングのポイント・フレーム・太客などの記録' : '所持ポイント・ブログ・推しの記録'}はすべてリセットされます。</p>
+        <button class="btn ghost block" id="role-switch">${mi('swap_horiz')}${isHost ? 'お客様' : 'ホスト'}に変わる</button>
+      </div>
     </div>`;
 }
 
@@ -1682,12 +1700,47 @@ $('entry-icon-file').addEventListener('change', e => {
   cropSquare(f).then(b64 => { e.target.value = ''; if (b64) { E.icon = b64; renderEntry(false); } });
 });
 
+// きれいな確認ダイアログ（OKなら true）
+function ask(title, html, okLabel, icon) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div'); bg.className = 'ask-bg';
+    bg.innerHTML = `<div class="card ask"><div class="ic">${mi(icon || 'help')}</div><h4>${title}</h4><p>${html}</p>
+      <div class="row"><button class="btn ghost" data-a="0">やめる</button><button class="btn rose" data-a="1">${okLabel}</button></div></div>`;
+    document.body.appendChild(bg);
+    bg.addEventListener('click', e => {
+      const b = e.target.closest('[data-a]');
+      if (!b && e.target !== bg) return;
+      bg.remove(); resolve(!!b && b.dataset.a === '1');
+    });
+  });
+}
+// 陣営の変更：確認を2回とってから
+async function switchRole() {
+  const me = S.data.me, toJa = me.role === 'host' ? 'お客様' : 'ホスト';
+  const lost = me.role === 'host' ? 'ランキングのポイント・フレーム・太客などの記録' : `所持ポイント（<b>${fmt(me.points)}pt</b>）・ブログ・推しの記録`;
+  if (!await ask(`${toJa}に変わりますか？`, `${esc(me.name)} さんの${lost}は<b>すべてリセット</b>されます。<br>名前・アイコン・パスワードは引き継ぎます。`, 'つぎへ', 'swap_horiz')) return;
+  if (!await ask('最終確認', `本当に${toJa}に変わりますか？<br><b>リセットした記録は元に戻せません。</b>`, `${toJa}に変わる`, 'warning')) return;
+  loading(true);
+  try {
+    const r = await api('switchRole', Object.assign(authBody(), { confirm: 'switch' }));
+    S.session = { role: r.role, token: r.token, id: r.id };
+    store.set('hc_session', S.session);
+    await load();
+    loading(false);
+    renderMe();
+    Sfx.play('welcome');
+    toast(`${mi('swap_horiz')}<span><b>${toJa}</b>として新しくスタートしました</span>`);
+  } catch (err) { loading(false); toast(err.message, true); }
+}
 function saveProfile() {
   loading(true);
   uploadPendingIcon().then(icon => {
     const body = authBody();
     if (icon) body.icon = icon;
     if ($('f-catch')) body.catch = $('f-catch').value;
+    const nm = $('f-name-edit').value.trim();
+    if (!nm) throw new Error('名前を入れてください');
+    if (nm !== S.data.me.name) body.name = nm;
     if ($('f-newpass').value) body.password = $('f-newpass').value;
     return api('updateProfile', body);
   }).then(() => { pendingIcon = null; return load(); })
@@ -1799,6 +1852,7 @@ document.addEventListener('click', e => {
     case 'b-post': postBlog(); break;
     case 'logout': S.session = null; store.del('hc_session'); load().then(() => { go('rank'); showEntry(); toast(`${mi('waving_hand')}<span>ログアウトしました</span>`); }); break;
     case 'profile-save': saveProfile(); break;
+    case 'role-switch': switchRole(); break;
     case 'bonus':
       loading(true);
       api('claimBonus', authBody()).then(r => { loading(false); playFx({ price: 0, sound: 'coin', icon: 'paid', giftName: `+${fmt(r.bonus)}pt`, label: 'DAILY BONUS', line: '今日のボーナスを受け取りました' }); return load(); })
@@ -1991,8 +2045,19 @@ const Demo = (function () {
         }
         case 'updateProfile': {
           const u = meOf(b); if (!u) return fail('ログインし直してください');
+          if (b.name !== undefined) { if (!b.name) return fail('名前を入れてください'); if (b.name !== u.name && roleList(b.role).some(x => x.name === b.name)) return fail('その名前はもう使われています'); u.name = b.name; }
           if (b.icon) u.icon = b.icon; if (b.catch !== undefined && b.role === 'host') u.catch = b.catch; if (b.password) u.pass = b.password;
           save(); return { ok: true };
+        }
+        case 'switchRole': {
+          const u = meOf(b); if (!u) return fail('ログインし直してください');
+          const to = b.role === 'host' ? 'guest' : 'host', list = roleList(to);
+          if (list.some(x => x.name === u.name)) return fail('移る先に同じ名前の人がいます。先に名前を変えてください');
+          const from = roleList(b.role); from.splice(from.indexOf(u), 1);
+          if (b.role === 'guest') db.posts = db.posts.filter(p => p.guestId !== u.id);
+          const n = { id: (to === 'host' ? 'h' : 'c') + Date.now(), name: u.name, icon: u.icon, pass: u.pass, token: 'tok' + Math.random() };
+          if (to === 'host') n.catch = ''; else { n.points = db.settings.initialPoints; n.lastBonus = ''; }
+          list.push(n); save(); return { role: to, id: n.id, token: n.token };
         }
         case 'claimBonus': {
           const u = meOf(Object.assign({}, b, { role: 'guest' })); if (!u) return fail('ログインし直してください');

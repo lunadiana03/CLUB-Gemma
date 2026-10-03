@@ -67,6 +67,7 @@ function handle(b) {
       case 'login':         return login_(b);
       case 'uploadIcon':    return uploadIcon_(b);
       case 'updateProfile': return withLock_(() => updateProfile_(b));
+      case 'switchRole':    return withLock_(() => switchRole_(b));
       case 'claimBonus':    return withLock_(() => claimBonus_(b));
       case 'tribute':       return withLock_(() => tribute_(b));
       case 'postBlog':      return withLock_(() => postBlog_(b));
@@ -276,6 +277,12 @@ function uploadIcon_(b) {
 function updateProfile_(b) {
   const me = me_(b);
   if (!me) throw new Error('ログインし直してください');
+  if (b.name !== undefined) {
+    const name = clean_(b.name, 20);
+    if (!name) throw new Error('名前を入れてください');
+    if (name !== String(me.user.name) && rows_(me.key).some(r => String(r.name) === name)) throw new Error('その名前はもう使われています');
+    setCell_(me.key, me.user._row, 'name', name);
+  }
   if (b.icon !== undefined) setCell_(me.key, me.user._row, 'icon', clean_(b.icon, 500));
   if (b.catch !== undefined && me.key === 'hosts') setCell_(me.key, me.user._row, 'catch', clean_(b.catch, 40));
   if (b.password) {
@@ -283,6 +290,30 @@ function updateProfile_(b) {
     setCell_(me.key, me.user._row, 'passHash', hash_(String(b.password)));
   }
   return { ok: true };
+}
+
+// 陣営（お客様⇔ホスト）を変える。ポイント・履歴などはすべてリセット（名前・アイコン・パスワードは引き継ぐ）
+function switchRole_(b) {
+  const me = me_(b);
+  if (!me) throw new Error('ログインし直してください');
+  if (b.confirm !== 'switch') throw new Error('確認が取れませんでした');
+  const s = settings_();
+  const toKey = me.key === 'hosts' ? 'guests' : 'hosts';
+  const name = String(me.user.name);
+  if (rows_(toKey).some(r => String(r.name) === name)) throw new Error('移る先に同じ名前の人がいます。先に名前を変えてください');
+  const id = newId_(toKey === 'hosts' ? 'h' : 'c');
+  const token = Utilities.getUuid();
+  const obj = { id: id, name: name, icon: me.user.icon, passHash: me.user.passHash, token: token, createdAt: nowIso_() };
+  if (toKey === 'hosts') obj.catch = '';
+  else { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; obj.blogDay = ''; obj.blogCount = 0; }
+  // お客様だった人のブログは消す（貢いだ記録はホストの売上なので残す）
+  if (me.key === 'guests') {
+    const posts = rows_('blog').filter(p => p.guestId === me.user.id).map(p => p._row).sort((a, c) => c - a);
+    posts.forEach(r => sheet_('blog').deleteRow(r));
+  }
+  sheet_(me.key).deleteRow(me.user._row);
+  append_(toKey, obj);
+  return { ok: true, role: toKey === 'hosts' ? 'host' : 'guest', id: id, token: token };
 }
 
 // ---------- ポイント ----------
