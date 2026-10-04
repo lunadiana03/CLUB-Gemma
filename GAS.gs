@@ -8,9 +8,9 @@
 
 const TZ = 'Asia/Tokyo';
 const SHEETS = {
-  hosts:    { name: 'ホスト',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
-  boys:     { name: 'ボーイ',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt'] },
-  guests:   { name: 'お客様',   cols: ['id', 'name', 'icon', 'points', 'passHash', 'token', 'createdAt', 'lastBonus', 'blogDay', 'blogCount'] },
+  hosts:    { name: 'ホスト',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt', 'nameChangedAt'] },
+  boys:     { name: 'ボーイ',   cols: ['id', 'name', 'icon', 'catch', 'passHash', 'token', 'createdAt', 'nameChangedAt'] },
+  guests:   { name: 'お客様',   cols: ['id', 'name', 'icon', 'points', 'passHash', 'token', 'createdAt', 'lastBonus', 'blogDay', 'blogCount', 'nameChangedAt'] },
   gifts:    { name: '貢ぎ物',   cols: ['id', 'name', 'price', 'icon', 'cat'] },
   tributes: { name: '貢ぎ履歴', cols: ['id', 'at', 'guestId', 'hostId', 'giftId', 'giftName', 'price', 'icon', 'message'] },
   settings: { name: '設定',     cols: ['key', 'value', 'memo'] },
@@ -45,6 +45,7 @@ const DEFAULT_GIFTS = [
   ['g12', 'シャンパンタワー', 450000, 'celebration', 'SPECIAL'],
   ['g13', 'フード（ポテト・唐揚げ・枝豆など）', 3000, 'fastfood', 'FOOD']
 ];
+const NAME_LOCK_MS = 24 * 3600 * 1000; // 名前を変えたら、この時間は変えられない
 const NUM_SETTINGS = ['initialPoints', 'dailyBonus', 'blogDailyMax', 'blogMinChars', 'blogCharPoint', 'blogCharMax', 'blogLikePoint', 'blogLikeMax', 'blogPostMax'];
 
 // ---------- 入口 ----------
@@ -233,7 +234,7 @@ function readAll_(b) {
   };
   const me = me_(b);
   if (me) {
-    out.me = { role: b.role, id: me.user.id, name: me.user.name };
+    out.me = { role: b.role, id: me.user.id, name: me.user.name, nameChangedAt: me.user.nameChangedAt ? new Date(me.user.nameChangedAt).toISOString() : '' };
     const field = me.key === 'guests' ? 'guestId' : 'hostId';
     const mine = tributes.filter(t => t[field] === me.user.id);
     out.me.byPartner = {};
@@ -299,8 +300,17 @@ function updateProfile_(b) {
   if (b.name !== undefined) {
     const name = clean_(b.name, 20);
     if (!name) throw new Error('名前を入れてください');
-    if (name !== String(me.user.name) && rows_(me.key).some(r => String(r.name) === name)) throw new Error('その名前はもう使われています');
-    setCell_(me.key, me.user._row, 'name', name);
+    if (name !== String(me.user.name)) {
+      const last = me.user.nameChangedAt ? new Date(me.user.nameChangedAt).getTime() : 0;
+      const left = last + NAME_LOCK_MS - Date.now();
+      if (left > 0) {
+        const m = Math.ceil(left / 60000);
+        throw new Error('名前は変えてから24時間は変えられません（あと' + Math.floor(m / 60) + '時間' + (m % 60) + '分）');
+      }
+      if (rows_(me.key).some(r => String(r.name) === name)) throw new Error('その名前はもう使われています');
+      setCell_(me.key, me.user._row, 'name', name);
+      setCell_(me.key, me.user._row, 'nameChangedAt', nowIso_());
+    }
   }
   if (b.icon !== undefined) setCell_(me.key, me.user._row, 'icon', clean_(b.icon, 500));
   if (b.catch !== undefined && me.key !== 'guests') setCell_(me.key, me.user._row, 'catch', clean_(b.catch, 40));
@@ -324,7 +334,8 @@ function switchRole_(b) {
   if (rows_(toKey).some(r => String(r.name) === name)) throw new Error('移る先に同じ名前の人がいます。先に名前を変えてください');
   const id = newId_({ hosts: 'h', guests: 'c', boys: 'b' }[toKey]);
   const token = Utilities.getUuid();
-  const obj = { id: id, name: name, icon: me.user.icon, passHash: me.user.passHash, token: token, createdAt: nowIso_() };
+  const obj = { id: id, name: name, icon: me.user.icon, passHash: me.user.passHash, token: token, createdAt: nowIso_(),
+    nameChangedAt: me.user.nameChangedAt ? new Date(me.user.nameChangedAt).toISOString() : '' };
   if (toKey === 'guests') { obj.points = Number(s.initialPoints) || 0; obj.lastBonus = ''; obj.blogDay = ''; obj.blogCount = 0; }
   else obj.catch = '';
   const oldId = me.user.id;

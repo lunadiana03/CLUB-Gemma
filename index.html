@@ -1266,6 +1266,18 @@ function renderHostMe(el, me) {
     ${settingsHtml(h, 'host')}`;
   countUp(el.querySelector('.host-board'));
 }
+// 名前は変えてから24時間は変えられない
+const NAME_LOCK_MS = 24 * 3600 * 1000;
+function nameUnlockAt() {
+  const t = S.data?.me?.nameChangedAt ? new Date(S.data.me.nameChangedAt).getTime() : 0;
+  return t ? t + NAME_LOCK_MS : 0;
+}
+function nameFieldHtml(p) {
+  const until = nameUnlockAt(), locked = until > Date.now();
+  const d = new Date(until), when = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `<div class="field"><label>名前</label><input id="f-name-edit" maxlength="20" value="${esc(p.name || '')}"${locked ? ' readonly style="opacity:.55"' : ''}>
+    <p class="muted" style="margin:6px 0 0">${locked ? `${mi('lock_clock')} 次に名前を変えられるのは ${when} から` : `${mi('info')} 名前を変えると、24時間は変えられません`}</p></div>`;
+}
 function settingsHtml(p, role) {
   const others = ['guest', 'host', 'boy'].filter(r => r !== role);
   const lost = role === 'host' ? 'ランキングのポイント・フレーム・もらった貢ぎ物の記録' : role === 'guest' ? '所持ポイント・ブログ・貢いだ記録' : 'ボーイとしての登録';
@@ -1274,7 +1286,7 @@ function settingsHtml(p, role) {
     <div class="card auth">
       <div class="icon-pick"><div id="icon-prev">${avatar({ name: p.name, icon: pendingIcon || p.icon }, { noAura: true, size: 72 })}</div>
         <label class="btn ghost">${mi('add_photo_alternate')}アイコンを変える<input type="file" accept="image/*" id="icon-file" hidden></label></div>
-      <div class="field"><label>名前</label><input id="f-name-edit" maxlength="20" value="${esc(p.name || '')}"></div>
+      ${nameFieldHtml(p)}
       ${role !== 'guest' ? `<div class="field"><label>${role === 'boy' ? '肩書き（例：店長、黒服）' : 'キャッチコピー'}</label><input id="f-catch" maxlength="40" value="${esc(p.catch || '')}"></div>` : ''}
       <div class="field"><label>新しいパスワード（変えるときだけ）</label><input id="f-newpass" type="password" autocomplete="new-password"></div>
       <button class="btn block" id="profile-save">${mi('check')}保存する</button>
@@ -1929,11 +1941,14 @@ function saveProfile() {
     if ($('f-catch')) body.catch = $('f-catch').value;
     const nm = $('f-name-edit').value.trim();
     if (!nm) throw new Error('名前を入れてください');
-    if (nm !== S.data.me.name) body.name = nm;
+    if (nm !== S.data.me.name) {
+      if (nameUnlockAt() > Date.now()) throw new Error('名前は変えてから24時間は変えられません');
+      body.name = nm;
+    }
     if ($('f-newpass').value) body.password = $('f-newpass').value;
     return api('updateProfile', body);
   }).then(() => { pendingIcon = null; return load(); })
-    .then(() => { loading(false); toast(`${mi('check_circle')}<span>保存しました</span>`); })
+    .then(() => { loading(false); document.activeElement && document.activeElement.blur(); renderMe(); toast(`${mi('check_circle')}<span>保存しました</span>`); })
     .catch(err => { loading(false); toast(err.message, true); });
 }
 
@@ -2228,7 +2243,7 @@ const Demo = (function () {
     if (me) {
       const f = b.role === 'guest' ? 'guestId' : 'hostId', mine = db.tributes.filter(t => t[f] === me.id), by = {};
       mine.forEach(t => { const o = b.role === 'guest' ? t.hostId : t.guestId; by[o] = (by[o] || 0) + t.price; });
-      out.me = { role: b.role, id: me.id, name: me.name, byPartner: by, history: mine.slice(-50).reverse() };
+      out.me = { role: b.role, id: me.id, name: me.name, nameChangedAt: me.nameChangedAt || '', byPartner: by, history: mine.slice(-50).reverse() };
       if (b.role === 'guest') {
         out.me.points = me.points; out.me.bonusReady = db.settings.dailyBonus > 0 && me.lastBonus !== day(Date.now());
         out.me.blogLeft = Math.max(0, db.settings.blogDailyMax - (me.blogDay === day(Date.now()) ? me.blogCount || 0 : 0));
@@ -2259,7 +2274,12 @@ const Demo = (function () {
         }
         case 'updateProfile': {
           const u = meOf(b); if (!u) return fail('ログインし直してください');
-          if (b.name !== undefined) { if (!b.name) return fail('名前を入れてください'); if (b.name !== u.name && roleList(b.role).some(x => x.name === b.name)) return fail('その名前はもう使われています'); u.name = b.name; }
+          if (b.name !== undefined && b.name !== u.name) {
+            if (!b.name) return fail('名前を入れてください');
+            if (u.nameChangedAt && Date.now() - new Date(u.nameChangedAt).getTime() < 24 * hr) return fail('名前は変えてから24時間は変えられません');
+            if (roleList(b.role).some(x => x.name === b.name)) return fail('その名前はもう使われています');
+            u.name = b.name; u.nameChangedAt = iso(Date.now());
+          }
           if (b.icon) u.icon = b.icon; if (b.catch !== undefined && b.role !== 'guest') u.catch = b.catch; if (b.password) u.pass = b.password;
           save(); return { ok: true };
         }
@@ -2272,7 +2292,7 @@ const Demo = (function () {
           const from = roleList(b.role); from.splice(from.indexOf(u), 1);
           db.posts = db.posts.filter(p => p.guestId !== u.id);
           db.tributes = db.tributes.filter(t => t.guestId !== u.id && t.hostId !== u.id);
-          const n = { id: ({ host: 'h', guest: 'c', boy: 'b' })[to] + Date.now(), name: u.name, icon: u.icon, pass: u.pass, token: 'tok' + Math.random() };
+          const n = { id: ({ host: 'h', guest: 'c', boy: 'b' })[to] + Date.now(), name: u.name, icon: u.icon, pass: u.pass, token: 'tok' + Math.random(), nameChangedAt: u.nameChangedAt };
           if (to === 'guest') { n.points = db.settings.initialPoints; n.lastBonus = ''; } else n.catch = '';
           list.push(n); save(); return { role: to, id: n.id, token: n.token };
         }
